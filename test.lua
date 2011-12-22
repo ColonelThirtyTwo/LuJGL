@@ -20,21 +20,20 @@ glu.gluLookAt(0,0,5,
 local r = 0
 function think()
 	r = r + 0.1
-	print("Thinking")
 end
 lujgl.setIdleCallback(think)
 
 function render()
+	gl.glClear(bit.bor(gl.GL_COLOR_BUFFER_BIT, gl.GL_DEPTH_BUFFER_BIT));
 	gl.glPushMatrix()
 	gl.glRotated(r,0,1,0)
 	glut.glutSolidCube(1)
 	gl.glPopMatrix()
-	print("Rendering")
 end
 lujgl.setRenderCallback(render)
 
 function event(ev,...)
-	print("Event", ev)
+	print("Event", ev, ...)
 end
 lujgl.setEventCallback(event)
 

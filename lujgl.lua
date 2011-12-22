@@ -73,11 +73,11 @@ function LuJGL.initialize(name, w, h, args)
 		if ok then glut.glutSwapBuffers() end
 	end)
 	
-	-- Idle
-	glut.glutIdleFunc(function()
-		call_callback(idle_cb)
-		LuJGL.glut.glutPostRedisplay()
-	end)
+	-- Idle (doing this in main loop)
+	--glut.glutIdleFunc(function()
+	--	call_callback(idle_cb)
+	--	LuJGL.glut.glutPostRedisplay()
+	--end)
 	
 	-- Close
 	glut.glutCloseFunc(function()
@@ -89,10 +89,17 @@ function LuJGL.initialize(name, w, h, args)
 	glut.glutKeyboardFunc(function(key, x, y)
 		call_callback(event_cb, "key", true, key, string.byte(key), x, y)
 	end)
-end
-
---- Deinitializes everything.
-function LuJGL.deinitialize()
+	
+	glut.glutMouseFunc(function(button, state, x, y)
+		call_callback(event_cb, "mouse", button, state, x, y)
+	end)
+	
+	glut.glutMotionFunc(function(x,y)
+		call_callback(event_cb, "motion", x, y)
+	end)
+	glut.glutPassiveMotionFunc(function(x,y)
+		call_callback(event_cb, "motion", x, y)
+	end)
 end
 
 --- Sets the idle callback. This is where the "thinking" code should go.
@@ -113,6 +120,8 @@ end
 --- Enters the main loop.
 function LuJGL.mainLoop()
 	while not stop do
+		call_callback(idle_cb)
+		LuJGL.glut.glutPostRedisplay()
 		LuJGL.glut.glutMainLoopEvent()
 	end
 end
