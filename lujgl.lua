@@ -44,12 +44,14 @@ function LuJGL.load(basepath)
 end
 
 --- Initializes GLUT and creates a new window.
+-- Also calls LuJGL.load() if it hasn't been done already
 -- @param name The window name
 -- @param w (Optional) Window width. Defaults to 640.
 -- @param h (Optional) Window height. Defaults to 480.
--- @param args (Optional) Arguments to glutInit. (TODO: Make this do something)
+-- @param args (Optional) Arguments to glutInit. (TODO: Not implemented)
 function LuJGL.initialize(name, w, h, args)
-	local glut = assert(LuJGL.glut,"Must call LuJGL.load before LuJGL.initialize!")
+	if not LuJGL.glut then LuJGL.load() end
+	local glut = assert(LuJGL.glut)
 	
 	w = w or 640
 	h = h or 480
@@ -62,8 +64,8 @@ function LuJGL.initialize(name, w, h, args)
 	glut.glutIgnoreKeyRepeat(true)
 	glut.glutSetOption(glut.GLUT_ACTION_ON_WINDOW_CLOSE,glut.GLUT_ACTION_CONTINUE_EXECUTION)
 	
-	lujgl.width = w -- TODO: Change to glutGet calls
-	lujgl.height = h
+	lujgl.width = glut.glutGet(glut.GLUT_WINDOW_WIDTH)
+	lujgl.height = glut.glutGet(glut.GLUT_WINDOW_HEIGHT)
 	
 	-- -- Callbacks
 	
@@ -87,11 +89,20 @@ function LuJGL.initialize(name, w, h, args)
 	
 	-- Keyboard
 	glut.glutKeyboardFunc(function(key, x, y)
-		call_callback(event_cb, "key", true, key, string.byte(key), x, y)
+		call_callback(event_cb, "key", true, string.char(key), x, y)
+	end)
+	glut.glutKeyboardUpFunc(function(key,x,y)
+		call_callback(event_cb, "key", false, string.char(key), x, y)
+	end)
+	glut.glutSpecialFunc(function(key,x,y)
+		call_callback(event_cb, "key", true, key, x, y)
+	end)
+	glut.glutSpecialUpFunc(function(key,x,y)
+		call_callback(event_cb, "key", false, key, x, y)
 	end)
 	
 	glut.glutMouseFunc(function(button, state, x, y)
-		call_callback(event_cb, "mouse", button, state, x, y)
+		call_callback(event_cb, "mouse", button, state ~= 0, x, y)
 	end)
 	
 	glut.glutMotionFunc(function(x,y)
@@ -130,6 +141,19 @@ end
 -- does return.
 function LuJGL.signalQuit()
 	stop = true
+end
+
+-- -- Some helful utilities
+local fbuffer = ffi.new("float[?]",4)
+
+--- Convenience function for glLightfv. Uses a static internal buffer
+-- to store the array in.
+function LuJGL.glLight(light, enum, r, g, b, a)
+	fbuffer[0] = r or 0
+	fbuffer[1] = g or 0
+	fbuffer[2] = b or 0
+	fbuffer[3] = a or 1
+	LuJGL.gl.glLightfv(light, enum, fbuffer)
 end
 
 package.loaded["luajgl"] = LuJGL
