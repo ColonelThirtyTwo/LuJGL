@@ -156,5 +156,4 @@ function LuJGL.glLight(light, enum, r, g, b, a)
 	LuJGL.gl.glLightfv(light, enum, fbuffer)
 end
 
-package.loaded["luajgl"] = LuJGL
 return LuJGL
