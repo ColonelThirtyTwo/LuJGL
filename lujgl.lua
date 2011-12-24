@@ -64,8 +64,8 @@ function LuJGL.initialize(name, w, h, args)
 	glut.glutIgnoreKeyRepeat(true)
 	glut.glutSetOption(glut.GLUT_ACTION_ON_WINDOW_CLOSE,glut.GLUT_ACTION_CONTINUE_EXECUTION)
 	
-	lujgl.width = glut.glutGet(glut.GLUT_WINDOW_WIDTH)
-	lujgl.height = glut.glutGet(glut.GLUT_WINDOW_HEIGHT)
+	LuJGL.width = glut.glutGet(glut.GLUT_WINDOW_WIDTH)
+	LuJGL.height = glut.glutGet(glut.GLUT_WINDOW_HEIGHT)
 	
 	-- -- Callbacks
 	
