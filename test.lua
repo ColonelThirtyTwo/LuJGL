@@ -14,6 +14,9 @@ glu.gluLookAt(0,0,5,
 	0,0,0,
 	0,1,0)
 
+gl.glEnable(gl.GL_DEPTH_TEST)
+gl.glEnable(gl.GL_COLOR_MATERIAL)
+
 gl.glEnable(gl.GL_LIGHTING)
 gl.glEnable(gl.GL_LIGHT0)
 lujgl.glLight(gl.GL_LIGHT0, gl.GL_AMBIENT, 0.2, 0.2, 0.2)
