@@ -33,13 +33,13 @@ end
 function LuJGL.load(basepath)
 	basepath = basepath or "./ffi"
 	-- Load OpenGL
-	ffi.cdef(assert(io.open(basepath.."/gl.h"):read("*a")))
+	ffi.cdef(assert(io.open(basepath.."/gl.h")):read("*a"))
 	LuJGL.gl = ffi.load("opengl32",true)
 	-- Load GLU
-	ffi.cdef(assert(io.open(basepath.."/glu.h"):read("*a")))
+	ffi.cdef(assert(io.open(basepath.."/glu.h")):read("*a"))
 	LuJGL.glu = ffi.load("glu32",true)
 	-- Load GLUT
-	ffi.cdef(assert(io.open(basepath.."/freeglut.h"):read("*a")))
+	ffi.cdef(assert(io.open(basepath.."/freeglut.h")):read("*a"))
 	LuJGL.glut = ffi.load("freeglut",false)
 end
 
