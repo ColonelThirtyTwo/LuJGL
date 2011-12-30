@@ -17,6 +17,13 @@ local function xpcall_traceback_hook(err)
 	print(debug.traceback(tostring(err) or "(non-string error)"))
 end
 
+local function create_callback(func)
+	-- Work around for this:
+	-- http://lua-users.org/lists/lua-l/2011-12/msg00712.html
+	jit.off(func)
+	return func
+end
+
 local function call_callback(func,...)
 	if not func then return true end
 	local ok, msg = xpcall(func,xpcall_traceback_hook,...)
@@ -67,8 +74,6 @@ function LuJGL.initialize(name, w, h, args)
 	LuJGL.width = glut.glutGet(glut.GLUT_WINDOW_WIDTH)
 	LuJGL.height = glut.glutGet(glut.GLUT_WINDOW_HEIGHT)
 	
-	-- -- Callbacks
-	
 	-- Render
 	glut.glutDisplayFunc(function()
 		local ok = call_callback(render_cb)
@@ -81,36 +86,34 @@ function LuJGL.initialize(name, w, h, args)
 	--	LuJGL.glut.glutPostRedisplay()
 	--end)
 	
-	-- Close
-	glut.glutCloseFunc(function()
+	glut.glutCloseFunc(create_callback(function()
 		local ok, msg = call_callback(event_cb, "close")
 		if ok and not msg then stop = true end
-	end)
+	end))
 	
-	-- Keyboard
-	glut.glutKeyboardFunc(function(key, x, y)
+	glut.glutKeyboardFunc(create_callback(function(key, x, y)
 		call_callback(event_cb, "key", true, string.char(key), x, y)
-	end)
-	glut.glutKeyboardUpFunc(function(key,x,y)
+	end))
+	glut.glutKeyboardUpFunc(create_callback(function(key,x,y)
 		call_callback(event_cb, "key", false, string.char(key), x, y)
-	end)
-	glut.glutSpecialFunc(function(key,x,y)
+	end))
+	glut.glutSpecialFunc(create_callback(function(key,x,y)
 		call_callback(event_cb, "key", true, key, x, y)
-	end)
-	glut.glutSpecialUpFunc(function(key,x,y)
+	end))
+	glut.glutSpecialUpFunc(create_callback(function(key,x,y)
 		call_callback(event_cb, "key", false, key, x, y)
-	end)
+	end))
 	
-	glut.glutMouseFunc(function(button, state, x, y)
+	glut.glutMouseFunc(create_callback(function(button, state, x, y)
 		call_callback(event_cb, "mouse", button, state ~= 0, x, y)
-	end)
+	end))
 	
-	glut.glutMotionFunc(function(x,y)
+	glut.glutMotionFunc(create_callback(function(x,y)
 		call_callback(event_cb, "motion", x, y)
-	end)
-	glut.glutPassiveMotionFunc(function(x,y)
+	end))
+	glut.glutPassiveMotionFunc(create_callback(function(x,y)
 		call_callback(event_cb, "motion", x, y)
-	end)
+	end))
 end
 
 --- Sets the idle callback. This is where the "thinking" code should go.
