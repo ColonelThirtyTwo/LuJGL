@@ -13,6 +13,8 @@ local render_cb
 local idle_cb
 local event_cb
 
+local tex_channels2glconst
+
 local function xpcall_traceback_hook(err)
 	print(debug.traceback(tostring(err) or "(non-string error)"))
 end
@@ -48,6 +50,18 @@ function LuJGL.load(basepath)
 	-- Load GLUT
 	ffi.cdef(assert(io.open(basepath.."/freeglut.h")):read("*a"))
 	LuJGL.glut = ffi.load("freeglut",false)
+	-- Load stb_image
+	ffi.cdef(assert(io.open(basepath.."/stb_image.h")):read("*a"))
+	LuJGL.stb_image = ffi.load("stb_image",false)
+	
+	-- Load some constants for utility functions
+	local gl = LuJGL.glu
+	tex_channels2glconst = {
+		[1] = gl.GL_ALPHA,
+		[2] = gl.GL_LUMINANCE_ALPHA,
+		[3] = gl.GL_RGB,
+		[4] = gl.GL_RGBA,
+	}
 end
 
 --- Initializes GLUT and creates a new window.
@@ -131,9 +145,18 @@ function LuJGL.setEventCallback(cb)
 	event_cb = cb
 end
 
+--- Checks for an OpenGL error. Errors if it finds one.
+function LuJGL.checkError()
+	local errcode = LuJGL.gl.glGetError()
+	if errcode ~= LuJGL.gl.GL_NO_ERROR then
+		error("OpenGL Error: "..ffi.string(LuJGL.glu.gluErrorString(errcode)),0)
+	end
+end
+
 --- Enters the main loop.
 function LuJGL.mainLoop()
 	while not stop do
+		LuJGL.checkError()
 		call_callback(idle_cb)
 		LuJGL.glut.glutPostRedisplay()
 		LuJGL.glut.glutMainLoopEvent()
@@ -147,8 +170,55 @@ function LuJGL.signalQuit()
 end
 
 -- -- Some helful utilities
-local fbuffer = ffi.new("float[?]",4)
 
+--- Loads an image file to a texture, using stb_image
+-- @param filepath Path to file to load texture from
+-- @param fchannels If non-nil, force this number of channels
+-- @param mipmaps Whether to generate mipmaps for this texture
+-- @param wrap Whether to set the texture repeat flag
+-- @return Texture ID
+-- @return Image Width
+-- @return Image Height
+-- @return Image channels (before adjusting to fchannels, see stb_image)
+function LuJGL.loadTexture(filepath, fchannels, mipmaps, wrap)
+	local gl = LuJGL.gl
+	local imgdatabuffer = ffi.new("int[3]",0)
+	
+	local image = ffi.gc(LuJGL.stb_image.stbi_load(filepath, imgdatabuffer, imgdatabuffer+1, imgdatabuffer+2, fchannels or 0),
+		LuJGL.stb_image.stbi_image_free)
+	
+	if image == nil then
+		error(ffi.string(LuJGL.stb_image.stbi_failure_reason()))
+	end
+	
+	local texbuffer = ffi.new("unsigned int[1]",0)
+	gl.glGenTextures(1,texbuffer)
+	local texid = texbuffer[0]
+	if texid == 0 then error("glGenTextures failed") end
+	gl.glBindTexture(gl.GL_TEXTURE_2D,texid)
+	
+	if wrap then
+		gl.glTexParameterf(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_WRAP_S, gl.GL_REPEAT)
+		gl.glTexParameterf(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_WRAP_T, gl.GL_REPEAT)
+	end
+	
+	if mipmaps then
+		gl.glTexParameterf(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MIN_FILTER, gl.GL_LINEAR_MIPMAP_NEAREST)
+		gl.glTexParameterf(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MAG_FILTER, gl.GL_LINEAR)
+		local ok = LuJGL.glu.gluBuild2DMipmaps(gl.GL_TEXTURE_2D, fchannels or imgdatabuffer[2], imgdatabuffer[0], imgdatabuffer[1],
+			tex_channels2glconst[fchannels or imgdatabuffer[2]], gl.GL_UNSIGNED_BYTE, image)
+		if ok ~= 0 then
+			error(LuJGL.glu.gluErrorString(ok))
+		end
+	else
+		gl.glTexImage2D(gl.GL_TEXTURE_2D, 0, fchannels or imgdatabuffer[2], imgdatabuffer[0], imgdatabuffer[1],
+			0, tex_channels2glconst[fchannels or imgdatabuffer[2]], gl.GL_UNSIGNED_BYTE, image)
+	end
+	
+	return texid
+end
+
+local fbuffer = ffi.new("float[?]",4)
 --- Convenience function for glLightfv. Uses a static internal buffer
 -- to store the array in.
 function LuJGL.glLight(light, enum, r, g, b, a)

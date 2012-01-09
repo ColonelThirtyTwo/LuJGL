@@ -7,6 +7,8 @@ local gl = lujgl.gl
 local glu = lujgl.glu
 local glut = lujgl.glut
 
+local imgtx = lujgl.loadTexture("test.png", nil, true, false)
+
 gl.glMatrixMode(gl.GL_PROJECTION)
 glu.gluPerspective(60,lujgl.width / lujgl.height,0.01, 1000)
 gl.glMatrixMode(gl.GL_MODELVIEW)
@@ -29,10 +31,35 @@ lujgl.setIdleCallback(think)
 
 function render()
 	gl.glClear(bit.bor(gl.GL_COLOR_BUFFER_BIT, gl.GL_DEPTH_BUFFER_BIT));
+	
+	gl.glEnable(gl.GL_TEXTURE_2D)
+	gl.glBindTexture(gl.GL_TEXTURE_2D,imgtx)
+	gl.glPushMatrix()
+	gl.glColor3d(1,1,1)
+	gl.glScaled(3,3,1)
+	gl.glBegin(gl.GL_QUADS)
+		gl.glNormal3d(0,0,-1)
+		gl.glTexCoord2d(0,0)
+		gl.glVertex3d(-1,-1,0)
+		
+		gl.glTexCoord2d(1,0)
+		gl.glVertex3d(1,-1,0)
+		
+		gl.glTexCoord2d(1,1)
+		gl.glVertex3d(1,1,0)
+		
+		gl.glTexCoord2d(0,1)
+		gl.glVertex3d(-1,1,0)
+	gl.glEnd()
+	gl.glPopMatrix()
+	gl.glDisable(gl.GL_TEXTURE_2D)
+	
 	gl.glPushMatrix()
 	gl.glRotated(r,0,1,0)
 	glut.glutSolidCube(1)
 	gl.glPopMatrix()
+	
+	lujgl.checkError()
 end
 lujgl.setRenderCallback(render)
 
