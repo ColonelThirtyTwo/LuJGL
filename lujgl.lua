@@ -79,7 +79,7 @@ function LuJGL.initialize(name, w, h, args)
 	
 	local argc = ffi.new("int[1]",0)
 	glut.glutInit(argc,nil)
-	glut.glutInitDisplayMode(bit.bor(glut.GLUT_DOUBLE, glut.GLUT_RGB, glut.GLUT_DEPTH))
+	glut.glutInitDisplayMode(bit.bor(glut.GLUT_DOUBLE, glut.GLUT_RGBA, glut.GLUT_DEPTH, glut.GLUT_STENCIL))
 	glut.glutInitWindowSize(w,h)
 	glut.glutCreateWindow(name)
 	glut.glutIgnoreKeyRepeat(true)
@@ -217,6 +217,7 @@ function LuJGL.loadTexture(filepath, fchannels, mipmaps, wrap)
 			0, tex_channels2glconst[fchannels or imgdatabuffer[2]], gl.GL_UNSIGNED_BYTE, image)
 	end
 	
+	LuJGL.checkError()
 	return texid
 end
 
