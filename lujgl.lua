@@ -211,6 +211,8 @@ function LuJGL.loadTexture(filepath, fchannels, mipmaps, wrap)
 			error(LuJGL.glu.gluErrorString(ok))
 		end
 	else
+		gl.glTexParameterf(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MIN_FILTER, gl.GL_LINEAR)
+		gl.glTexParameterf(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MAG_FILTER, gl.GL_LINEAR)
 		gl.glTexImage2D(gl.GL_TEXTURE_2D, 0, fchannels or imgdatabuffer[2], imgdatabuffer[0], imgdatabuffer[1],
 			0, tex_channels2glconst[fchannels or imgdatabuffer[2]], gl.GL_UNSIGNED_BYTE, image)
 	end

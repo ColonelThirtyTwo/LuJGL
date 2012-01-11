@@ -7,7 +7,7 @@ local gl = lujgl.gl
 local glu = lujgl.glu
 local glut = lujgl.glut
 
-local imgtx = lujgl.loadTexture("test.png", nil, true, false)
+local imgtx = lujgl.loadTexture("test.png", nil, false, false)
 
 gl.glMatrixMode(gl.GL_PROJECTION)
 glu.gluPerspective(60,lujgl.width / lujgl.height,0.01, 1000)
