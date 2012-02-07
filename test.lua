@@ -32,6 +32,8 @@ lujgl.setIdleCallback(think)
 
 local rotationAxis = vectors.new(1,1,0):normalized()
 local boxPos = vectors(0,0,2)
+print("Rotation Axis:",rotationAxis)
+print("Box Position:",boxPos)
 function render()
 	gl.glClear(bit.bor(gl.GL_COLOR_BUFFER_BIT, gl.GL_DEPTH_BUFFER_BIT));
 	
