@@ -1,4 +1,5 @@
-lujgl = require "lujgl"
+local lujgl = require "lujgl"
+local vectors = require "vectors"
 
 print("Initializing window")
 lujgl.initialize("Test App")
@@ -29,6 +30,8 @@ function think()
 end
 lujgl.setIdleCallback(think)
 
+local rotationAxis = vectors.new(1,1,0):normalized()
+local boxPos = vectors(0,0,2)
 function render()
 	gl.glClear(bit.bor(gl.GL_COLOR_BUFFER_BIT, gl.GL_DEPTH_BUFFER_BIT));
 	
@@ -55,7 +58,8 @@ function render()
 	gl.glDisable(gl.GL_TEXTURE_2D)
 	
 	gl.glPushMatrix()
-	gl.glRotated(r,0,1,0)
+	gl.glTranslated(boxPos:unpack())
+	gl.glRotated(r,rotationAxis:unpack())
 	glut.glutSolidCube(1)
 	gl.glPopMatrix()
 	
