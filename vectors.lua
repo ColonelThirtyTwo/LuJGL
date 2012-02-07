@@ -25,7 +25,7 @@ function Vector:__div(other)
 	return new_vector3(self.x/other, self.y/other, self.z/other)
 end
 function Vector:__unm()
-	return new_vector(-self.x, -self.y, -self.z)
+	return new_vector3(-self.x, -self.y, -self.z)
 end
 
 function Vector:len()
