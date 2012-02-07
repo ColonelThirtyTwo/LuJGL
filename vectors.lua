@@ -24,7 +24,7 @@ end
 function Vector:__div(other)
 	return new_vector3(self.x/other, self.y/other, self.z/other)
 end
-function Vector:__neg()
+function Vector:__unm()
 	return new_vector(-self.x, -self.y, -self.z)
 end
 
@@ -54,4 +54,8 @@ end
 function Vector:unpack()
 	return self.x, self.y, self.z
 end
+function Vector:copy()
+	return new_vector3(self.x, self.y, self.z)
+end
+
 return Vector
