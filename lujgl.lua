@@ -15,6 +15,32 @@ local event_cb
 
 local tex_channels2glconst
 
+do
+	local basepath = LUJGL_FFI_PATH or "./ffi"
+	-- Load OpenGL
+	ffi.cdef(assert(io.open(basepath.."/gl.h")):read("*a"))
+	LuJGL.gl = ffi.load("opengl32",true)
+	-- Load GLU
+	ffi.cdef(assert(io.open(basepath.."/glu.h")):read("*a"))
+	LuJGL.glu = ffi.load("glu32",true)
+	-- Load GLUT
+	ffi.cdef(assert(io.open(basepath.."/freeglut.h")):read("*a"))
+	LuJGL.glut = ffi.load("freeglut",true)
+	-- Load stb_image
+	ffi.cdef(assert(io.open(basepath.."/stb_image.h")):read("*a"))
+	LuJGL.stb_image = ffi.load("stb_image",true)
+
+	-- Load some constants for utility functions
+	local gl = LuJGL.glu
+	tex_channels2glconst = {
+		[1] = gl.GL_ALPHA,
+		[2] = gl.GL_LUMINANCE_ALPHA,
+		[3] = gl.GL_RGB,
+		[4] = gl.GL_RGBA,
+	}
+end
+
+
 local function xpcall_traceback_hook(err)
 	print(debug.traceback(tostring(err) or "(non-string error)"))
 end
@@ -35,43 +61,12 @@ local function call_callback(func,...)
 	return ok, msg
 end
 
---- Loads the OpenGL, GLU, and GLUT libraries.
--- After this call, LuJGL.gl[u[t]] will be set to their respective
--- libraries. No window will be created however.
--- @param basepath (Optional) The path where the ffi definitions reside in. Defaults to ./ffi/
-function LuJGL.load(basepath)
-	basepath = basepath or "./ffi"
-	-- Load OpenGL
-	ffi.cdef(assert(io.open(basepath.."/gl.h")):read("*a"))
-	LuJGL.gl = ffi.load("opengl32",true)
-	-- Load GLU
-	ffi.cdef(assert(io.open(basepath.."/glu.h")):read("*a"))
-	LuJGL.glu = ffi.load("glu32",true)
-	-- Load GLUT
-	ffi.cdef(assert(io.open(basepath.."/freeglut.h")):read("*a"))
-	LuJGL.glut = ffi.load("freeglut",false)
-	-- Load stb_image
-	ffi.cdef(assert(io.open(basepath.."/stb_image.h")):read("*a"))
-	LuJGL.stb_image = ffi.load("stb_image",false)
-	
-	-- Load some constants for utility functions
-	local gl = LuJGL.glu
-	tex_channels2glconst = {
-		[1] = gl.GL_ALPHA,
-		[2] = gl.GL_LUMINANCE_ALPHA,
-		[3] = gl.GL_RGB,
-		[4] = gl.GL_RGBA,
-	}
-end
-
 --- Initializes GLUT and creates a new window.
--- Also calls LuJGL.load() if it hasn't been done already
 -- @param name The window name
 -- @param w (Optional) Window width. Defaults to 640.
 -- @param h (Optional) Window height. Defaults to 480.
 -- @param args (Optional) Arguments to glutInit. (TODO: Not implemented)
 function LuJGL.initialize(name, w, h, args)
-	if not LuJGL.glut then LuJGL.load() end
 	local glut = assert(LuJGL.glut)
 	
 	w = w or 640
