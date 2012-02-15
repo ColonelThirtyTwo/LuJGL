@@ -1,4 +1,5 @@
 local lujgl = require "lujgl"
+local bit = require "bit"
 local vectors = require "vectors"
 
 print("Initializing window")
@@ -37,7 +38,10 @@ print("Box Position:",boxPos)
 function render()
 	gl.glClear(bit.bor(gl.GL_COLOR_BUFFER_BIT, gl.GL_DEPTH_BUFFER_BIT));
 	
-	gl.glEnable(gl.GL_TEXTURE_2D)
+	-- 3D stuff
+	gl.glEnable(gl.GL_DEPTH_TEST);
+	gl.glEnable(gl.GL_CULL_FACE);
+	gl.glEnable(gl.GL_TEXTURE_2D);
 	gl.glBindTexture(gl.GL_TEXTURE_2D,imgtx)
 	gl.glPushMatrix()
 	gl.glColor3d(1,1,1)
@@ -64,6 +68,17 @@ function render()
 	gl.glRotated(r,rotationAxis:unpack())
 	glut.glutSolidCube(1)
 	gl.glPopMatrix()
+	
+	-- 2D stuff
+	gl.glDisable(gl.GL_TEXTURE_2D)
+	lujgl.begin2D()
+	gl.glBegin(gl.GL_QUADS)
+		gl.glVertex2i(0, 0)
+		gl.glVertex2i(50, 0)
+		gl.glVertex2i(50, 50)
+		gl.glVertex2i(0, 50)
+	gl.glEnd()
+	lujgl.end2D()
 	
 	lujgl.checkError()
 end

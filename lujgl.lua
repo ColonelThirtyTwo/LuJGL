@@ -5,6 +5,7 @@ local ffi = require("ffi")
 local bit = require("bit")
 
 local max = math.max
+local gl, glu, glut
 
 local LuJGL = {}
 
@@ -21,13 +22,16 @@ do
 	local basepath = LUJGL_FFI_PATH or "./ffi"
 	-- Load OpenGL
 	ffi.cdef(assert(io.open(basepath.."/gl.h")):read("*a"))
-	LuJGL.gl = ffi.load("opengl32",true)
+	gl = ffi.load("opengl32",true)
+	LuJGL.gl = gl
 	-- Load GLU
 	ffi.cdef(assert(io.open(basepath.."/glu.h")):read("*a"))
-	LuJGL.glu = ffi.load("glu32",true)
+	glu = ffi.load("glu32",true)
+	LuJGL.glu = glu
 	-- Load GLUT
 	ffi.cdef(assert(io.open(basepath.."/freeglut.h")):read("*a"))
-	LuJGL.glut = ffi.load("freeglut",true)
+	glut = ffi.load("freeglut",true)
+	LuJGL.glut = glut
 	-- Load stb_image
 	ffi.cdef(assert(io.open(basepath.."/stb_image.h")):read("*a"))
 	LuJGL.stb_image = ffi.load("stb_image",true)
@@ -151,9 +155,9 @@ end
 
 --- Checks for an OpenGL error. Errors if it finds one.
 function LuJGL.checkError()
-	local errcode = LuJGL.gl.glGetError()
-	if errcode ~= LuJGL.gl.GL_NO_ERROR then
-		error("OpenGL Error: "..ffi.string(LuJGL.glu.gluErrorString(errcode)),0)
+	local errcode = gl.glGetError()
+	if errcode ~= gl.GL_NO_ERROR then
+		error("OpenGL Error: "..ffi.string(glu.gluErrorString(errcode)),0)
 	end
 end
 
@@ -162,8 +166,8 @@ function LuJGL.mainLoop()
 	while not stop do
 		LuJGL.checkError()
 		call_callback(idle_cb)
-		LuJGL.glut.glutPostRedisplay()
-		LuJGL.glut.glutMainLoopEvent()
+		glut.glutPostRedisplay()
+		glut.glutMainLoopEvent()
 	end
 end
 
@@ -185,7 +189,6 @@ end
 -- @return Image Height
 -- @return Image channels (before adjusting to fchannels, see stb_image)
 function LuJGL.loadTexture(filepath, fchannels, mipmaps, wrap)
-	local gl = LuJGL.gl
 	local imgdatabuffer = ffi.new("int[3]",0)
 	
 	local image = ffi.gc(LuJGL.stb_image.stbi_load(filepath, imgdatabuffer, imgdatabuffer+1, imgdatabuffer+2, fchannels or 0),
@@ -233,7 +236,34 @@ function LuJGL.glLight(light, enum, r, g, b, a)
 	fbuffer[1] = g or 0
 	fbuffer[2] = b or 0
 	fbuffer[3] = a or 1
-	LuJGL.gl.glLightfv(light, enum, fbuffer)
+	gl.glLightfv(light, enum, fbuffer)
+end
+
+--- Begins rendering 2D. Use this to render HUD, GUI, etc.
+function LuJGL.begin2D()
+	-- TODO: Use glPushAttrib
+	gl.glDisable(gl.GL_DEPTH_TEST);
+	gl.glDisable(gl.GL_CULL_FACE);
+	
+	gl.glMatrixMode(gl.GL_MODELVIEW)
+	gl.glPushMatrix()
+	gl.glLoadIdentity()
+	gl.glMatrixMode(gl.GL_PROJECTION)
+	gl.glPushMatrix()
+	gl.glLoadIdentity()
+	glu.gluOrtho2D(0,LuJGL.width,0,LuJGL.height)
+	gl.glMatrixMode(gl.GL_MODELVIEW)
+end
+
+--- Ends 2d rendering.
+function LuJGL.end2D()
+	gl.glMatrixMode(gl.GL_PROJECTION)
+	gl.glPopMatrix()
+	gl.glMatrixMode(gl.GL_MODELVIEW)
+	gl.glPopMatrix()
+	
+	gl.glEnable(gl.GL_DEPTH_TEST);
+	gl.glEnable(gl.GL_CULL_FACE);
 end
 
 return LuJGL
