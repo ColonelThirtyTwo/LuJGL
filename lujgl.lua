@@ -241,9 +241,11 @@ end
 
 --- Begins rendering 2D. Use this to render HUD, GUI, etc.
 function LuJGL.begin2D()
-	-- TODO: Use glPushAttrib
-	gl.glDisable(gl.GL_DEPTH_TEST);
-	gl.glDisable(gl.GL_CULL_FACE);
+	gl.glPushAttrib(bit.bor(gl.GL_ENABLE_BIT))
+	gl.glDisable(gl.GL_DEPTH_TEST)
+	gl.glDisable(gl.GL_CULL_FACE)
+	gl.glDisable(gl.GL_FOG)
+	gl.glDisable(gl.GL_LIGHTING)
 	
 	gl.glMatrixMode(gl.GL_MODELVIEW)
 	gl.glPushMatrix()
@@ -262,8 +264,7 @@ function LuJGL.end2D()
 	gl.glMatrixMode(gl.GL_MODELVIEW)
 	gl.glPopMatrix()
 	
-	gl.glEnable(gl.GL_DEPTH_TEST);
-	gl.glEnable(gl.GL_CULL_FACE);
+	gl.glPopAttrib()
 end
 
 return LuJGL

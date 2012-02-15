@@ -11,6 +11,9 @@ local glut = lujgl.glut
 
 local imgtx = lujgl.loadTexture("test.png", nil, false, false)
 
+gl.glEnable(gl.GL_DEPTH_TEST);
+gl.glEnable(gl.GL_CULL_FACE);
+
 gl.glMatrixMode(gl.GL_PROJECTION)
 glu.gluPerspective(60,lujgl.width / lujgl.height,0.01, 1000)
 gl.glMatrixMode(gl.GL_MODELVIEW)
@@ -39,8 +42,6 @@ function render()
 	gl.glClear(bit.bor(gl.GL_COLOR_BUFFER_BIT, gl.GL_DEPTH_BUFFER_BIT));
 	
 	-- 3D stuff
-	gl.glEnable(gl.GL_DEPTH_TEST);
-	gl.glEnable(gl.GL_CULL_FACE);
 	gl.glEnable(gl.GL_TEXTURE_2D);
 	gl.glBindTexture(gl.GL_TEXTURE_2D,imgtx)
 	gl.glPushMatrix()
