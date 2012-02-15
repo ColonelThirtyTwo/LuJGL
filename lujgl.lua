@@ -4,6 +4,8 @@ assert(jit, "LuJGL must run on LuaJIT!")
 local ffi = require("ffi")
 local bit = require("bit")
 
+local max = math.max
+
 local LuJGL = {}
 
 -- Error flag, so we can exit the main loop if a callback errors
@@ -122,6 +124,13 @@ function LuJGL.initialize(name, w, h, args)
 	end))
 	glut.glutPassiveMotionFunc(create_callback(function(x,y)
 		call_callback(event_cb, "motion", x, y)
+	end))
+	
+	glut.glutReshapeFunc(create_callback(function(w,h)
+		LuJGL.gl.glViewport(0,0,max(w,1),max(1,h))
+		LuJGL.width = w
+		LuJGL.height = h
+		call_callback(event_cb,"resize",w,h)
 	end))
 end
 
