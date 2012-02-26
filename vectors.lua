@@ -28,7 +28,7 @@ function Vector:__unm()
 	return new_vector3(-self.x, -self.y, -self.z)
 end
 function Vector:__tostring()
-	return string.format("<%d,%d,%d>",self.x,self.y,self.z)
+	return string.format("<%f,%f,%f>",self.x,self.y,self.z)
 end
 
 function Vector:len()
