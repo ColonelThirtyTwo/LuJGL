@@ -21,19 +21,19 @@ local tex_channels2glconst
 do
 	local basepath = LUJGL_FFI_PATH or "./ffi"
 	-- Load OpenGL
-	ffi.cdef(assert(io.open(basepath.."/gl.h")):read("*a"))
+	ffi.cdef(assert(io.open(basepath.."/gl.ffi")):read("*a"))
 	gl = ffi.load("opengl32",true)
 	LuJGL.gl = gl
 	-- Load GLU
-	ffi.cdef(assert(io.open(basepath.."/glu.h")):read("*a"))
+	ffi.cdef(assert(io.open(basepath.."/glu.ffi")):read("*a"))
 	glu = ffi.load("glu32",true)
 	LuJGL.glu = glu
 	-- Load GLUT
-	ffi.cdef(assert(io.open(basepath.."/freeglut.h")):read("*a"))
+	ffi.cdef(assert(io.open(basepath.."/freeglut.ffi")):read("*a"))
 	glut = ffi.load("freeglut",true)
 	LuJGL.glut = glut
 	-- Load stb_image
-	ffi.cdef(assert(io.open(basepath.."/stb_image.h")):read("*a"))
+	ffi.cdef(assert(io.open(basepath.."/stb_image.ffi")):read("*a"))
 	LuJGL.stb_image = ffi.load("stb_image",true)
 
 	-- Load some constants for utility functions
@@ -212,10 +212,10 @@ function LuJGL.loadTexture(filepath, fchannels, mipmaps, wrap)
 	if mipmaps then
 		gl.glTexParameterf(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MIN_FILTER, gl.GL_LINEAR_MIPMAP_NEAREST)
 		gl.glTexParameterf(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MAG_FILTER, gl.GL_LINEAR)
-		local ok = LuJGL.glu.gluBuild2DMipmaps(gl.GL_TEXTURE_2D, fchannels or imgdatabuffer[2], imgdatabuffer[0], imgdatabuffer[1],
+		local ok = glu.gluBuild2DMipmaps(gl.GL_TEXTURE_2D, fchannels or imgdatabuffer[2], imgdatabuffer[0], imgdatabuffer[1],
 			tex_channels2glconst[fchannels or imgdatabuffer[2]], gl.GL_UNSIGNED_BYTE, image)
 		if ok ~= 0 then
-			error(LuJGL.glu.gluErrorString(ok))
+			error(glu.gluErrorString(ok))
 		end
 	else
 		gl.glTexParameterf(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MIN_FILTER, gl.GL_LINEAR)
