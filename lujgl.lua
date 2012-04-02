@@ -1,11 +1,10 @@
 
-assert(jit, "LuJGL must run on LuaJIT!")
-
-local ffi = require("ffi")
-local bit = require("bit")
+local ffi = require "ffi"
+local bit = require "bit"
+local gl2glew = require "gl2glew"
 
 local max = math.max
-local gl, glu, glut
+local gl, glu, glut, glew
 
 local LuJGL = {}
 
@@ -20,10 +19,17 @@ local tex_channels2glconst
 
 do
 	local basepath = LUJGL_FFI_PATH or "./ffi"
-	-- Load OpenGL
-	ffi.cdef(assert(io.open(basepath.."/gl.ffi")):read("*a"))
-	gl = ffi.load("opengl32",true)
-	LuJGL.gl = gl
+	-- Load GLEW (replaces opengl)
+	ffi.cdef(assert(io.open(basepath.."/glew.ffi")):read("*a"))
+	local gllib = ffi.load("opengl32",true)
+	local glewlib = ffi.load("glew32",true)
+	LuJGL.gl = setmetatable({},{__index = function(self, k)
+		return gl2glew[k] and glewlib[gl2glew[k]] or gllib[k]
+	end})
+	gl = LuJGL.gl
+	glew = glewlib
+	LuJGL.glew = glewlib
+	
 	-- Load GLU
 	ffi.cdef(assert(io.open(basepath.."/glu.ffi")):read("*a"))
 	glu = ffi.load("glu32",true)
@@ -45,7 +51,6 @@ do
 		[4] = gl.GL_RGBA,
 	}
 end
-
 
 local function xpcall_traceback_hook(err)
 	print(debug.traceback(tostring(err) or "(non-string error)"))
@@ -86,6 +91,11 @@ function LuJGL.initialize(name, w, h, args)
 	glut.glutIgnoreKeyRepeat(true)
 	glut.glutSetOption(glut.GLUT_ACTION_ON_WINDOW_CLOSE,glut.GLUT_ACTION_CONTINUE_EXECUTION)
 	
+	local err = glew.glewInit()
+	if err ~= glew.GLEW_OK then
+		error("Error initializing GLEW: "..ffi.string(glew.glewGetErrorString(err)),0)
+	end
+	
 	LuJGL.width = glut.glutGet(glut.GLUT_WINDOW_WIDTH)
 	LuJGL.height = glut.glutGet(glut.GLUT_WINDOW_HEIGHT)
 	
@@ -94,12 +104,6 @@ function LuJGL.initialize(name, w, h, args)
 		local ok = call_callback(render_cb)
 		if ok then glut.glutSwapBuffers() end
 	end)
-	
-	-- Idle (doing this in main loop)
-	--glut.glutIdleFunc(function()
-	--	call_callback(idle_cb)
-	--	LuJGL.glut.glutPostRedisplay()
-	--end)
 	
 	glut.glutCloseFunc(create_callback(function()
 		local ok, msg = call_callback(event_cb, "close")
@@ -253,7 +257,7 @@ function LuJGL.begin2D()
 	gl.glMatrixMode(gl.GL_PROJECTION)
 	gl.glPushMatrix()
 	gl.glLoadIdentity()
-	glu.gluOrtho2D(0,LuJGL.width,0,LuJGL.height)
+	gl.glOrtho(0,LuJGL.width,0,LuJGL.height,-1,1)
 	gl.glMatrixMode(gl.GL_MODELVIEW)
 end
 

@@ -8,6 +8,7 @@ lujgl.initialize("Test App")
 local gl = lujgl.gl
 local glu = lujgl.glu
 local glut = lujgl.glut
+local glew = lujgl.glew
 
 local imgtx = lujgl.loadTexture("test.png", nil, false, false)
 
@@ -38,6 +39,14 @@ local rotationAxis = vectors.new(1,1,0):normalized()
 local boxPos = vectors(0,0,2)
 print("Rotation Axis:",rotationAxis)
 print("Box Position:",boxPos)
+
+-- GLEW test
+if gl.GLEW_ARB_vertex_program ~= 0 then
+	print("Vertex shaders supported.")
+else
+	print("Vertex shaders not supported.")
+end
+
 function render()
 	gl.glClear(bit.bor(gl.GL_COLOR_BUFFER_BIT, gl.GL_DEPTH_BUFFER_BIT));
 	
