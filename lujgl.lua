@@ -158,6 +158,7 @@ end
 
 --- Enters the main loop.
 function LuJGL.mainLoop()
+	glfw.glfwSetTime(0)
 	while not stop do
 		call_callback(idle_cb)
 		call_callback(render_cb)
@@ -171,6 +172,11 @@ end
 -- does return.
 function LuJGL.signalQuit()
 	stop = true
+end
+
+--- Gets the time since the main loop started in seconds
+function LuJGL.getTime()
+	return glfw.glfwGetTime()
 end
 
 -- -- Some helful utilities

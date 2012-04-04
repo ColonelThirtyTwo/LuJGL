@@ -30,7 +30,6 @@ local glew = lujgl.glew
 local imgtx = lujgl.loadTexture("test.png", nil, false, false)
 
 gl.glEnable(gl.GL_DEPTH_TEST);
-gl.glEnable(gl.GL_CULL_FACE);
 
 gl.glMatrixMode(gl.GL_PROJECTION)
 glu.gluPerspective(60,lujgl.width / lujgl.height,0.01, 1000)
@@ -46,14 +45,10 @@ gl.glEnable(gl.GL_LIGHTING)
 gl.glEnable(gl.GL_LIGHT0)
 lujgl.glLight(gl.GL_LIGHT0, gl.GL_AMBIENT, 0.2, 0.2, 0.2)
 
-local r = 0
-function think()
-	r = r + 0.1
-end
-lujgl.setIdleCallback(think)
+lujgl.setIdleCallback(function() end)
 
 local rotationAxis = vectors.new(1,1,0):normalized()
-local boxPos = vectors(0,0,2)
+local boxPos = vectors(-0.5,-0.5,2)
 print("Rotation Axis:",rotationAxis)
 print("Box Position:",boxPos)
 
@@ -92,7 +87,7 @@ function render()
 	
 	gl.glPushMatrix()
 	gl.glTranslated(boxPos:unpack())
-	gl.glRotated(r,rotationAxis:unpack())
+	gl.glRotated(lujgl.getTime()*10,rotationAxis:unpack())
 	for i=0,5 do
 		gl.glBegin(gl.GL_QUADS)
 		gl.glNormal3fv(CubeVerticies.n[i])
