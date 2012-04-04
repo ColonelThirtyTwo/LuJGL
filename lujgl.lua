@@ -114,9 +114,9 @@ function LuJGL.initialize(name, w, h)
 	
 	glfw.glfwSetKeyCallback(create_callback(function(key, down)
 		if key <= 255 then
-			key = string.char(key)
+			key = string.char(key):lower()
 		end
-		call_callback(event_cb, "key", down ~= 0)
+		call_callback(event_cb, "key", down ~= 0, key)
 	end))
 	
 	glfw.glfwSetMouseButtonCallback(create_callback(function(button, action)
