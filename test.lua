@@ -1,13 +1,30 @@
+
 local lujgl = require "lujgl"
+local ffi = require "ffi"
 local bit = require "bit"
 local vectors = require "vectors"
+
+local CubeVerticies = {}
+CubeVerticies.v = ffi.new("const float[8][3]", {
+	{0,0,1}, {0,0,0}, {0,1,0}, {0,1,1},
+	{1,0,1}, {1,0,0}, {1,1,0}, {1,1,1}
+})
+
+CubeVerticies.n = ffi.new("const float[6][3]", {
+	{-1.0, 0.0, 0.0}, {0.0, 1.0, 0.0}, {1.0, 0.0, 0.0},
+	{0.0, -1.0, 0.0}, {0.0, 0.0, -1.0}, {0.0, 0.0, 1.0}
+})
+
+CubeVerticies.f = ffi.new("const float[6][4]", { 
+	{0, 1, 2, 3}, {3, 2, 6, 7}, {7, 6, 5, 4},
+	{4, 5, 1, 0}, {5, 6, 2, 1}, {7, 4, 0, 3}
+})
 
 print("Initializing window")
 lujgl.initialize("Test App")
 
 local gl = lujgl.gl
 local glu = lujgl.glu
-local glut = lujgl.glut
 local glew = lujgl.glew
 
 local imgtx = lujgl.loadTexture("test.png", nil, false, false)
@@ -76,7 +93,14 @@ function render()
 	gl.glPushMatrix()
 	gl.glTranslated(boxPos:unpack())
 	gl.glRotated(r,rotationAxis:unpack())
-	glut.glutSolidCube(1)
+	for i=0,5 do
+		gl.glBegin(gl.GL_QUADS)
+		gl.glNormal3fv(CubeVerticies.n[i])
+		for j=0,3 do
+			gl.glVertex3fv(CubeVerticies.v[CubeVerticies.f[i][j]])
+		end
+		gl.glEnd()
+	end
 	gl.glPopMatrix()
 	
 	-- 2D stuff

@@ -4,7 +4,9 @@ local bit = require "bit"
 local gl2glew = require "gl2glew"
 
 local max = math.max
-local gl, glu, glut, glew
+local gl, glu, glfw, glew
+
+local int_buffer = ffi.new("int[2]")
 
 local LuJGL = {}
 
@@ -19,7 +21,8 @@ local tex_channels2glconst
 
 do
 	local basepath = LUJGL_FFI_PATH or "./ffi"
-	-- Load GLEW (replaces opengl)
+	
+	-- Load OpenGL + GLEW
 	ffi.cdef(assert(io.open(basepath.."/glew.ffi")):read("*a"))
 	local gllib = ffi.load("opengl32",true)
 	local glewlib = ffi.load("glew32",true)
@@ -34,21 +37,20 @@ do
 	ffi.cdef(assert(io.open(basepath.."/glu.ffi")):read("*a"))
 	glu = ffi.load("glu32",true)
 	LuJGL.glu = glu
-	-- Load GLUT
-	ffi.cdef(assert(io.open(basepath.."/freeglut.ffi")):read("*a"))
-	glut = ffi.load("freeglut",true)
-	LuJGL.glut = glut
+	-- Load GLFW
+	ffi.cdef(assert(io.open(basepath.."/glfw.ffi")):read("*a"))
+	glfw = ffi.load("glfw",true)
+	LuJGL.glfw = glfw
 	-- Load stb_image
 	ffi.cdef(assert(io.open(basepath.."/stb_image.ffi")):read("*a"))
 	LuJGL.stb_image = ffi.load("stb_image",true)
 
 	-- Load some constants for utility functions
-	local gl = LuJGL.glu
 	tex_channels2glconst = {
-		[1] = gl.GL_ALPHA,
-		[2] = gl.GL_LUMINANCE_ALPHA,
-		[3] = gl.GL_RGB,
-		[4] = gl.GL_RGBA,
+		[1] = glu.GL_ALPHA,
+		[2] = glu.GL_LUMINANCE_ALPHA,
+		[3] = glu.GL_RGB,
+		[4] = glu.GL_RGBA,
 	}
 end
 
@@ -72,74 +74,63 @@ local function call_callback(func,...)
 	return ok, msg
 end
 
---- Initializes GLUT and creates a new window.
+--- Initializes GLFW and creates a new window.
 -- @param name The window name
 -- @param w (Optional) Window width. Defaults to 640.
 -- @param h (Optional) Window height. Defaults to 480.
--- @param args (Optional) Arguments to glutInit. (TODO: Not implemented)
-function LuJGL.initialize(name, w, h, args)
-	local glut = assert(LuJGL.glut)
-	
+function LuJGL.initialize(name, w, h)
 	w = w or 640
 	h = h or 480
 	
-	local argc = ffi.new("int[1]",0)
-	glut.glutInit(argc,nil)
-	glut.glutInitDisplayMode(bit.bor(glut.GLUT_DOUBLE, glut.GLUT_RGBA, glut.GLUT_DEPTH, glut.GLUT_STENCIL))
-	glut.glutInitWindowSize(w,h)
-	glut.glutCreateWindow(name)
-	glut.glutIgnoreKeyRepeat(true)
-	glut.glutSetOption(glut.GLUT_ACTION_ON_WINDOW_CLOSE,glut.GLUT_ACTION_CONTINUE_EXECUTION)
+	if glfw.glfwInit() == 0 then
+		error("error initializing glfw",0)
+	end
+	
+	glfw.glfwOpenWindowHint(glfw.GLFW_WINDOW_NO_RESIZE, true)
+	
+	-- TODO: Whats a good default for the number of stencil bits?
+	if glfw.glfwOpenWindow(w,h,8,8,8,8,24,8,glfw.GLFW_WINDOW) == 0 then
+		glfw.glfwTerminate()
+		error("error initializing glfw window",0)
+	end
 	
 	local err = glew.glewInit()
 	if err ~= glew.GLEW_OK then
-		error("Error initializing GLEW: "..ffi.string(glew.glewGetErrorString(err)),0)
+		error("error initializing glew: "..ffi.string(glew.glewGetErrorString(err)),0)
 	end
 	
-	LuJGL.width = glut.glutGet(glut.GLUT_WINDOW_WIDTH)
-	LuJGL.height = glut.glutGet(glut.GLUT_WINDOW_HEIGHT)
+	local size_buffer = ffi.new("int[2]")
+	glfw.glfwGetWindowSize(size_buffer, size_buffer + 1)
+	LuJGL.width = size_buffer[0]
+	LuJGL.height = size_buffer[1]
 	
-	-- Render
-	glut.glutDisplayFunc(function()
-		local ok = call_callback(render_cb)
-		if ok then glut.glutSwapBuffers() end
-	end)
+	glfw.glfwSetWindowTitle(name)
 	
-	glut.glutCloseFunc(create_callback(function()
+	glfw.glfwSetWindowCloseCallback(create_callback(function()
 		local ok, msg = call_callback(event_cb, "close")
 		if ok and not msg then stop = true end
+		return false
 	end))
 	
-	glut.glutKeyboardFunc(create_callback(function(key, x, y)
-		call_callback(event_cb, "key", true, string.char(key), x, y)
-	end))
-	glut.glutKeyboardUpFunc(create_callback(function(key,x,y)
-		call_callback(event_cb, "key", false, string.char(key), x, y)
-	end))
-	glut.glutSpecialFunc(create_callback(function(key,x,y)
-		call_callback(event_cb, "key", true, key, x, y)
-	end))
-	glut.glutSpecialUpFunc(create_callback(function(key,x,y)
-		call_callback(event_cb, "key", false, key, x, y)
+	glfw.glfwSetKeyCallback(create_callback(function(key, down)
+		if key <= 255 then
+			key = string.char(key)
+		end
+		call_callback(event_cb, "key", down ~= 0)
 	end))
 	
-	glut.glutMouseFunc(create_callback(function(button, state, x, y)
-		call_callback(event_cb, "mouse", button, state ~= 0, x, y)
+	glfw.glfwSetMouseButtonCallback(create_callback(function(button, action)
+		glfw.glfwGetMousePos(int_buffer,int_buffer+1)
+		call_callback(event_cb, "mouse", button, action ~= 0, int_buffer[0], int_buffer[1])
 	end))
 	
-	glut.glutMotionFunc(create_callback(function(x,y)
+	glfw.glfwSetMousePosCallback(create_callback(function(x,y)
 		call_callback(event_cb, "motion", x, y)
 	end))
-	glut.glutPassiveMotionFunc(create_callback(function(x,y)
-		call_callback(event_cb, "motion", x, y)
-	end))
-	
-	glut.glutReshapeFunc(create_callback(function(w,h)
-		LuJGL.gl.glViewport(0,0,max(w,1),max(1,h))
-		LuJGL.width = w
-		LuJGL.height = h
-		call_callback(event_cb,"resize",w,h)
-	end))
+end
+
+function LuJGL.deinitialize()
+	glfw.glfwTerminate()
 end
 
 --- Sets the idle callback. This is where the "thinking" code should go.
@@ -168,11 +159,12 @@ end
 --- Enters the main loop.
 function LuJGL.mainLoop()
 	while not stop do
-		LuJGL.checkError()
 		call_callback(idle_cb)
-		glut.glutPostRedisplay()
-		glut.glutMainLoopEvent()
+		call_callback(render_cb)
+		glfw.glfwSwapBuffers()
 	end
+	glfw.glfwCloseWindow()
+	glfw.glfwTerminate()
 end
 
 --- Signals the main loop to terminate. This simply sets a flag; this function
