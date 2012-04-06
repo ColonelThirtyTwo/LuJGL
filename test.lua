@@ -113,6 +113,13 @@ function render()
 end
 lujgl.setRenderCallback(render)
 
+function think()
+	if lujgl.frameCount % 1000 == 1000-1 then
+		print(string.format("FPS: %f", lujgl.fps()))
+	end
+end
+lujgl.setIdleCallback(think)
+
 function event(ev,...)
 	print("Event", ev, ...)
 end

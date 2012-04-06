@@ -9,6 +9,7 @@ local gl, glu, glfw, glew
 local int_buffer = ffi.new("int[2]")
 
 local LuJGL = {}
+LuJGL.frameCount = 0
 
 -- Error flag, so we can exit the main loop if a callback errors
 local stop = false
@@ -159,10 +160,12 @@ end
 --- Enters the main loop.
 function LuJGL.mainLoop()
 	glfw.glfwSetTime(0)
+	LuJGL.frameCount = 0
 	while not stop do
 		call_callback(idle_cb)
 		call_callback(render_cb)
 		glfw.glfwSwapBuffers()
+		LuJGL.frameCount = LuJGL.frameCount + 1
 	end
 	glfw.glfwCloseWindow()
 	glfw.glfwTerminate()
@@ -180,6 +183,19 @@ function LuJGL.getTime()
 end
 
 -- -- Some helful utilities
+
+do
+	local last_framecount = 0
+	local last_time = 0
+	--- Returns (frames / seconds) since the last call to this function
+	function LuJGL.fps()
+		local count, now = LuJGL.frameCount, LuJGL.getTime()
+		local num = (count - last_framecount) / (now - last_time)
+		last_framecount = count
+		last_time = now
+		return num
+	end
+end
 
 --- Loads an image file to a texture, using stb_image
 -- @param filepath Path to file to load texture from
