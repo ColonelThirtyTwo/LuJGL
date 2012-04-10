@@ -25,8 +25,8 @@ do
 	
 	-- Load OpenGL + GLEW
 	ffi.cdef(assert(io.open(basepath.."/glew.ffi")):read("*a"))
-	local gllib = ffi.load("opengl32",true)
-	local glewlib = ffi.load("glew32",true)
+	local gllib = ffi.load("opengl32")
+	local glewlib = ffi.load("glew32")
 	LuJGL.gl = setmetatable({},{__index = function(self, k)
 		return gl2glew[k] and glewlib[gl2glew[k]] or gllib[k]
 	end})
@@ -36,15 +36,15 @@ do
 	
 	-- Load GLU
 	ffi.cdef(assert(io.open(basepath.."/glu.ffi")):read("*a"))
-	glu = ffi.load("glu32",true)
+	glu = ffi.load("glu32")
 	LuJGL.glu = glu
 	-- Load GLFW
 	ffi.cdef(assert(io.open(basepath.."/glfw.ffi")):read("*a"))
-	glfw = ffi.load("glfw",true)
+	glfw = ffi.load("glfw")
 	LuJGL.glfw = glfw
 	-- Load stb_image
 	ffi.cdef(assert(io.open(basepath.."/stb_image.ffi")):read("*a"))
-	LuJGL.stb_image = ffi.load("stb_image",true)
+	LuJGL.stb_image = ffi.load("stb_image")
 
 	-- Load some constants for utility functions
 	tex_channels2glconst = {
