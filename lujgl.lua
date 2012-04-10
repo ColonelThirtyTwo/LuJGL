@@ -233,7 +233,7 @@ function LuJGL.loadTexture(filepath, fchannels, mipmaps, wrap)
 		local ok = glu.gluBuild2DMipmaps(gl.GL_TEXTURE_2D, fchannels or imgdatabuffer[2], imgdatabuffer[0], imgdatabuffer[1],
 			tex_channels2glconst[fchannels or imgdatabuffer[2]], gl.GL_UNSIGNED_BYTE, image)
 		if ok ~= 0 then
-			error(glu.gluErrorString(ok))
+			error(ffi.string(glu.gluErrorString(ok)))
 		end
 	else
 		gl.glTexParameterf(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MIN_FILTER, gl.GL_LINEAR)
