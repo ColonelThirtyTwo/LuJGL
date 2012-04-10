@@ -243,7 +243,7 @@ function LuJGL.loadTexture(filepath, fchannels, mipmaps, wrap)
 	end
 	
 	LuJGL.checkError()
-	return texid
+	return texid, imgdatabuffer[0], imgdatabuffer[1], imgdatabuffer[2]
 end
 
 local fbuffer = ffi.new("float[?]",4)
