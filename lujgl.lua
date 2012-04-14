@@ -128,6 +128,12 @@ function LuJGL.initialize(name, w, h)
 	glfw.glfwSetMousePosCallback(create_callback(function(x,y)
 		call_callback(event_cb, "motion", x, y)
 	end))
+	
+	local last_wheel_pos = 0
+	glfw.glfwSetMouseWheelCallback(create_callback(function(pos)
+		call_callback(event_cb, "wheel", pos - last_wheel_pos, pos)
+		last_wheel_pos = pos
+	end))
 end
 
 function LuJGL.deinitialize()
