@@ -23,20 +23,25 @@ local tex_channels2glconst
 do
 	local basepath = LUJGL_FFI_PATH or "./ffi"
 	
-	-- Load OpenGL + GLEW
+	-- Load OpenGL, GLU, GLEW
 	ffi.cdef(assert(io.open(basepath.."/glew.ffi")):read("*a"))
-	local gllib = ffi.load("opengl32")
-	local glewlib = ffi.load("glew32")
+	ffi.cdef(assert(io.open(basepath.."/glu.ffi")):read("*a"))
+	local gllib, glewlib
+	if ffi.os == "Windows" then
+		gllib = ffi.load("opengl32")
+		gliewlib = ffi.load("glew32")
+		glu = ffi.load("glu32")
+	else
+		gllib = ffi.load("GL")
+		glewlib = ffi.load("GLEW")
+		glu = ffi.load("GLU")
+	end
 	LuJGL.gl = setmetatable({},{__index = function(self, k)
 		return gl2glew[k] and glewlib[gl2glew[k]] or gllib[k]
 	end})
 	gl = LuJGL.gl
 	glew = glewlib
 	LuJGL.glew = glewlib
-	
-	-- Load GLU
-	ffi.cdef(assert(io.open(basepath.."/glu.ffi")):read("*a"))
-	glu = ffi.load("glu32")
 	LuJGL.glu = glu
 	-- Load GLFW
 	ffi.cdef(assert(io.open(basepath.."/glfw.ffi")):read("*a"))
