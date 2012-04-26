@@ -29,7 +29,7 @@ do
 	local gllib, glewlib
 	if ffi.os == "Windows" then
 		gllib = ffi.load("opengl32")
-		gliewlib = ffi.load("glew32")
+		glewlib = ffi.load("glew32")
 		glu = ffi.load("glu32")
 	else
 		gllib = ffi.load("GL")

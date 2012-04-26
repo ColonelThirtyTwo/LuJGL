@@ -2,7 +2,6 @@
 local lujgl = require "lujgl"
 local ffi = require "ffi"
 local bit = require "bit"
-local vectors = require "vectors"
 
 local CubeVerticies = {}
 CubeVerticies.v = ffi.new("const float[8][3]", {
@@ -47,10 +46,10 @@ lujgl.glLight(gl.GL_LIGHT0, gl.GL_AMBIENT, 0.2, 0.2, 0.2)
 
 lujgl.setIdleCallback(function() end)
 
-local rotationAxis = vectors.new(1,1,0):normalized()
-local boxPos = vectors(-0.5,-0.5,2)
-print("Rotation Axis:",rotationAxis)
-print("Box Position:",boxPos)
+local rotx, roty, rotz = 1/math.sqrt(2), 1/math.sqrt(2), 0
+local boxx, boxy, boxz = -0.5,-0.5,2
+print("Rotation Axis:", rotx, roty, rotz)
+print("Box Position:", boxx, boxy, boxz)
 
 -- GLEW test
 if gl.GLEW_ARB_vertex_program ~= 0 then
@@ -86,8 +85,8 @@ function render()
 	gl.glDisable(gl.GL_TEXTURE_2D)
 	
 	gl.glPushMatrix()
-	gl.glTranslated(boxPos:unpack())
-	gl.glRotated(lujgl.getTime()*10,rotationAxis:unpack())
+	gl.glTranslated(boxx, boxy, boxz)
+	gl.glRotated(lujgl.getTime()*10, rotx, roty, rotz)
 	for i=0,5 do
 		gl.glBegin(gl.GL_QUADS)
 		gl.glNormal3fv(CubeVerticies.n[i])
