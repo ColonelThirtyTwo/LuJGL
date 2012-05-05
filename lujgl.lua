@@ -1,7 +1,6 @@
 
 local ffi = require "ffi"
 local bit = require "bit"
-local gl2glew = require "gl2glew"
 
 local max = math.max
 local gl, glu, glfw
@@ -45,7 +44,18 @@ do
 	-- Load stb_image
 	ffi.cdef(assert(io.open(basepath.."/stb_image.ffi")):read("*a"))
 	LuJGL.stb_image = ffi.load("stb_image")
-
+	
+	LuJGL.glext = setmetatable({}, {
+		__index = function(self, k)
+			local ptr = glfw.glfwGetProcAddress(k)
+			if ptr == nil then error("glfwGetProcAddress failed for "..k.." (are you accessing the right function?)",2) end
+			local ok, cptr = pcall(ffi.cast, string.format("PFN%sPROC", string.upper(k)), ptr)
+			if not ok then error("couldn't cast: "..k,2) end
+			rawset(self, k, cptr)
+			return cptr
+		end,
+	})
+	
 	-- Load some constants for utility functions
 	tex_channels2glconst = {
 		[1] = glu.GL_ALPHA,

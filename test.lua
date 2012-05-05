@@ -55,7 +55,7 @@ do
 	local has = lujgl.glfw.glfwExtensionSupported("GL_ARB_shader_objects") ~= 0
 	if has then
 		print("Shader objects supported. Trying to fetch address for glLinkProgramARB.")
-		local glLinkProgramARB = lujgl.getProcAddress("glLinkProgramARB")
+		local glLinkProgramARB = lujgl.glext.glLinkProgramARB
 		if glLinkProgramARB ~= nil then
 			print("Address:", tostring(glLinkProgramARB))
 		else
