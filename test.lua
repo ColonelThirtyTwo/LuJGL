@@ -24,7 +24,6 @@ lujgl.initialize("Test App")
 
 local gl = lujgl.gl
 local glu = lujgl.glu
-local glew = lujgl.glew
 
 local imgtx = lujgl.loadTexture("test.png", nil, false, false)
 
@@ -51,11 +50,20 @@ local boxx, boxy, boxz = -0.5,-0.5,2
 print("Rotation Axis:", rotx, roty, rotz)
 print("Box Position:", boxx, boxy, boxz)
 
--- GLEW test
-if gl.GLEW_ARB_vertex_program ~= 0 then
-	print("Vertex shaders supported.")
-else
-	print("Vertex shaders not supported.")
+-- Try loading an extension
+do
+	local has = lujgl.glfw.glfwExtensionSupported("GL_ARB_shader_objects") ~= 0
+	if has then
+		print("Shader objects supported. Trying to fetch address for glLinkProgramARB.")
+		local glLinkProgramARB = lujgl.getProcAddress("glLinkProgramARB")
+		if glLinkProgramARB ~= nil then
+			print("Address:", tostring(glLinkProgramARB))
+		else
+			print("Couldn't find or address is null.")
+		end
+	else
+		print("Shader objects not supported.")
+	end
 end
 
 function render()

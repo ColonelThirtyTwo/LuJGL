@@ -4,7 +4,7 @@ local bit = require "bit"
 local gl2glew = require "gl2glew"
 
 local max = math.max
-local gl, glu, glfw, glew
+local gl, glu, glfw
 
 local int_buffer = ffi.new("int[2]")
 
@@ -19,29 +19,24 @@ local idle_cb
 local event_cb
 
 local tex_channels2glconst
+local ext_function_cache = setmetatable({}, {__mode="v"})
 
 do
 	local basepath = LUJGL_FFI_PATH or "./ffi"
 	
-	-- Load OpenGL, GLU, GLEW
-	ffi.cdef(assert(io.open(basepath.."/glew.ffi")):read("*a"))
+	-- Load OpenGL, GLU
+	ffi.cdef(assert(io.open(basepath.."/gl.ffi")):read("*a"))
 	ffi.cdef(assert(io.open(basepath.."/glu.ffi")):read("*a"))
-	local gllib, glewlib
+	local gllib
 	if ffi.os == "Windows" then
 		gllib = ffi.load("opengl32")
-		glewlib = ffi.load("glew32")
 		glu = ffi.load("glu32")
 	else
 		gllib = ffi.load("GL")
-		glewlib = ffi.load("GLEW")
 		glu = ffi.load("GLU")
 	end
-	LuJGL.gl = setmetatable({},{__index = function(self, k)
-		return gl2glew[k] and glewlib[gl2glew[k]] or gllib[k]
-	end})
+	LuJGL.gl = gllib
 	gl = LuJGL.gl
-	glew = glewlib
-	LuJGL.glew = glewlib
 	LuJGL.glu = glu
 	-- Load GLFW
 	ffi.cdef(assert(io.open(basepath.."/glfw.ffi")):read("*a"))
@@ -98,11 +93,6 @@ function LuJGL.initialize(name, w, h)
 	if glfw.glfwOpenWindow(w,h,8,8,8,8,24,8,glfw.GLFW_WINDOW) == 0 then
 		glfw.glfwTerminate()
 		error("error initializing glfw window",0)
-	end
-	
-	local err = glew.glewInit()
-	if err ~= glew.GLEW_OK then
-		error("error initializing glew: "..ffi.string(glew.glewGetErrorString(err)),0)
 	end
 	
 	local size_buffer = ffi.new("int[2]")
@@ -294,6 +284,18 @@ function LuJGL.end2D()
 	gl.glPopMatrix()
 	
 	gl.glPopAttrib()
+end
+
+--- Looks up and caches an OpenGL extension function
+-- @param func The function name, including the prefix (ex. glLinkProgramARB)
+-- @return The pointer to the functon, appropriately cased, or nil if no function definition was found.
+function LuJGL.getProcAddress(func)
+	if ext_function_cache[func] then return ext_function_cache[func] end
+	local ptr = glfw.glfwGetProcAddress(func)
+	local ok, cptr = pcall(ffi.cast, string.format("PFN%sPROC", string.upper(func)), ptr)
+	if not ok then return nil end
+	ext_function_cache[func] = cptr
+	return cptr
 end
 
 return LuJGL
