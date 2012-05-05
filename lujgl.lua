@@ -288,7 +288,7 @@ end
 
 --- Looks up and caches an OpenGL extension function
 -- @param func The function name, including the prefix (ex. glLinkProgramARB)
--- @return The pointer to the functon, appropriately cased, or nil if no function definition was found.
+-- @return The pointer to the functon, appropriately casted, or nil if no function definition was found.
 function LuJGL.getProcAddress(func)
 	if ext_function_cache[func] then return ext_function_cache[func] end
 	local ptr = glfw.glfwGetProcAddress(func)
