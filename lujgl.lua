@@ -18,7 +18,7 @@ local idle_cb
 local event_cb
 
 local tex_channels2glconst
-local ext_function_cache = setmetatable({}, {__mode="v"})
+local ext_function_cache = {}
 
 do
 	local basepath = LUJGL_FFI_PATH or "./ffi"
@@ -142,6 +142,7 @@ function LuJGL.initialize(name, w, h)
 end
 
 function LuJGL.deinitialize()
+	glfw.glfwCloseWindow()
 	glfw.glfwTerminate()
 end
 
