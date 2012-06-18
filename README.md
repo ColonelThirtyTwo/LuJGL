@@ -14,7 +14,6 @@ How to Use (Windows)
 --------------------
  + Download the source via git
  + Put luajit.exe, lua51.dll, glfw.dll, and stb_image.dll in the directory
- + If the ffi folder is not in the working directory (a submodule, etc.), set the Lua global LUJGL_FFI_PATH to the directory where the FFI headers reside in.
  + Load the library via requiring it: `local lujgl = require "lujgl"`
  + Call lujgl.initialize(windowname, w, h) to create the window
  + Pass LuJGL.setIdleCallback/setRenderCallback/setEventCallback the appropriate functions
