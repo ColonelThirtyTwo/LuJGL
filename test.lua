@@ -23,25 +23,26 @@ print("Initializing window")
 lujgl.initialize("Test App")
 
 local gl = lujgl.gl
+local glconst = lujgl.glconst
 local glu = lujgl.glu
 
 local imgtx = lujgl.loadTexture("test.png", nil, false, false)
 
-gl.glEnable(gl.GL_DEPTH_TEST);
+gl.glEnable(glconst.GL_DEPTH_TEST);
 
-gl.glMatrixMode(gl.GL_PROJECTION)
+gl.glMatrixMode(glconst.GL_PROJECTION)
 glu.gluPerspective(60,lujgl.width / lujgl.height,0.01, 1000)
-gl.glMatrixMode(gl.GL_MODELVIEW)
+gl.glMatrixMode(glconst.GL_MODELVIEW)
 glu.gluLookAt(0,0,5,
 	0,0,0,
 	0,1,0)
 
-gl.glEnable(gl.GL_DEPTH_TEST)
-gl.glEnable(gl.GL_COLOR_MATERIAL)
+gl.glEnable(glconst.GL_DEPTH_TEST)
+gl.glEnable(glconst.GL_COLOR_MATERIAL)
 
-gl.glEnable(gl.GL_LIGHTING)
-gl.glEnable(gl.GL_LIGHT0)
-lujgl.glLight(gl.GL_LIGHT0, gl.GL_AMBIENT, 0.2, 0.2, 0.2)
+gl.glEnable(glconst.GL_LIGHTING)
+gl.glEnable(glconst.GL_LIGHT0)
+lujgl.glLight(glconst.GL_LIGHT0, glconst.GL_AMBIENT, 0.2, 0.2, 0.2)
 
 lujgl.setIdleCallback(function() end)
 
@@ -67,15 +68,15 @@ do
 end
 
 function render()
-	gl.glClear(bit.bor(gl.GL_COLOR_BUFFER_BIT, gl.GL_DEPTH_BUFFER_BIT));
+	gl.glClear(bit.bor(glconst.GL_COLOR_BUFFER_BIT, glconst.GL_DEPTH_BUFFER_BIT));
 	
 	-- 3D stuff
-	gl.glEnable(gl.GL_TEXTURE_2D);
-	gl.glBindTexture(gl.GL_TEXTURE_2D,imgtx)
+	gl.glEnable(glconst.GL_TEXTURE_2D);
+	gl.glBindTexture(glconst.GL_TEXTURE_2D,imgtx)
 	gl.glPushMatrix()
 	gl.glColor3d(1,1,1)
 	gl.glScaled(3,3,1)
-	gl.glBegin(gl.GL_QUADS)
+	gl.glBegin(glconst.GL_QUADS)
 		gl.glNormal3d(0,0,-1)
 		gl.glTexCoord2d(0,0)
 		gl.glVertex3d(-1,-1,0)
@@ -90,13 +91,13 @@ function render()
 		gl.glVertex3d(-1,1,0)
 	gl.glEnd()
 	gl.glPopMatrix()
-	gl.glDisable(gl.GL_TEXTURE_2D)
+	gl.glDisable(glconst.GL_TEXTURE_2D)
 	
 	gl.glPushMatrix()
 	gl.glTranslated(boxx, boxy, boxz)
 	gl.glRotated(lujgl.getTime()*10, rotx, roty, rotz)
 	for i=0,5 do
-		gl.glBegin(gl.GL_QUADS)
+		gl.glBegin(glconst.GL_QUADS)
 		gl.glNormal3fv(CubeVerticies.n[i])
 		for j=0,3 do
 			gl.glVertex3fv(CubeVerticies.v[CubeVerticies.f[i][j]])
@@ -106,9 +107,9 @@ function render()
 	gl.glPopMatrix()
 	
 	-- 2D stuff
-	gl.glDisable(gl.GL_TEXTURE_2D)
+	gl.glDisable(glconst.GL_TEXTURE_2D)
 	lujgl.begin2D()
-	gl.glBegin(gl.GL_QUADS)
+	gl.glBegin(glconst.GL_QUADS)
 		gl.glVertex2i(0, 0)
 		gl.glVertex2i(50, 0)
 		gl.glVertex2i(50, 50)
