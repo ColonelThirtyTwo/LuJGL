@@ -20,7 +20,7 @@ CubeVerticies.f = ffi.new("const float[6][4]", {
 })
 
 print("Initializing window")
-lujgl.initialize("Test App")
+lujgl.initialize("Test App",nil,nil,{[lujgl.glfw.GLFW_WINDOW_NO_RESIZE]=true,[lujgl.glfw.GLFW_FSAA_SAMPLES]=8})
 
 local gl = lujgl.gl
 local glconst = lujgl.glconst
@@ -53,8 +53,7 @@ print("Box Position:", boxx, boxy, boxz)
 
 -- Try loading an extension
 do
-	local has = lujgl.glfw.glfwExtensionSupported("GL_ARB_shader_objects") ~= 0
-	if has then
+	if lujgl.glfw.glfwExtensionSupported("GL_ARB_shader_objects") ~= 0 then
 		print("Shader objects supported. Trying to fetch address for glLinkProgramARB.")
 		local glLinkProgramARB = lujgl.glext.glLinkProgramARB
 		if glLinkProgramARB ~= nil then
@@ -71,7 +70,7 @@ function render()
 	gl.glClear(bit.bor(glconst.GL_COLOR_BUFFER_BIT, glconst.GL_DEPTH_BUFFER_BIT));
 	
 	-- 3D stuff
-	gl.glEnable(glconst.GL_TEXTURE_2D);
+	gl.glEnable(glconst.GL_TEXTURE_2D)
 	gl.glBindTexture(glconst.GL_TEXTURE_2D,imgtx)
 	gl.glPushMatrix()
 	gl.glColor3d(1,1,1)

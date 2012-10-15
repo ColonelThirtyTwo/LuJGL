@@ -3375,7 +3375,8 @@ end
 -- @param name The window name
 -- @param w (Optional) Window width. Defaults to 640.
 -- @param h (Optional) Window height. Defaults to 480.
-function LuJGL.initialize(name, w, h)
+-- @param hints (Optional) Table of values to be passed to glfwOpenWindowHint. Defaults to {glfw.GLFW_WINDOW_NO_RESIZE=true}
+function LuJGL.initialize(name, w, h, hints)
 	w = w or 640
 	h = h or 480
 	
@@ -3383,7 +3384,11 @@ function LuJGL.initialize(name, w, h)
 		error("error initializing glfw",0)
 	end
 	
-	glfw.glfwOpenWindowHint(glfw.GLFW_WINDOW_NO_RESIZE, true)
+	if hints then
+		for k,v in pairs(hints) do glfw.glfwOpenWindowHint(k,v) end
+	else
+		glfw.glfwOpenWindowHint(glfw.GLFW_WINDOW_NO_RESIZE, true)
+	end
 	
 	-- TODO: Whats a good default for the number of stencil bits?
 	if glfw.glfwOpenWindow(w,h,8,8,8,8,24,8,glfw.GLFW_WINDOW) == 0 then
