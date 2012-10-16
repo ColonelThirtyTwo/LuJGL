@@ -1,0 +1,3 @@
+[submodule "winapi"]
+	path = winapi
+	url = git://github.com/Wiladams/LJIT2Win32.git

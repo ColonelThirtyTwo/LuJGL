@@ -3,7 +3,14 @@ local ffi = require "ffi"
 local bit = require "bit"
 
 local max = math.max
-local gl, glconst, glu, glfw
+local gl, glconst, glu, glext
+local C = ffi.C
+local gdiffi, userffi, kernelffi
+
+local antigc = {
+	windowClassName = "GLLayeredWindowClass",
+}
+local hinstance
 
 local int_buffer = ffi.new("int[2]")
 
@@ -2985,271 +2992,6 @@ extern GLint gluUnProject (GLdouble winX, GLdouble winY, GLdouble winZ, const GL
 extern GLint gluUnProject4 (GLdouble winX, GLdouble winY, GLdouble winZ, GLdouble clipW, const GLdouble *model, const GLdouble *proj, const GLint *view, GLdouble nearVal, GLdouble farVal, GLdouble* objX, GLdouble* objY, GLdouble* objZ, GLdouble* objW);
 	]]
 	
-	-- GLFW
-	ffi.cdef[[
-static const int GLFW_VERSION_MAJOR = 2;
-static const int GLFW_VERSION_MINOR = 7;
-static const int GLFW_VERSION_REVISION = 4;
-static const int GLFW_RELEASE = 0;
-static const int GLFW_PRESS = 1;
-static const int GLFW_KEY_UNKNOWN = -1;
-static const int GLFW_KEY_SPACE = 32;
-static const int GLFW_KEY_SPECIAL = 256;
-static const int GLFW_KEY_ESC = (GLFW_KEY_SPECIAL+1);
-static const int GLFW_KEY_F1 = (GLFW_KEY_SPECIAL+2);
-static const int GLFW_KEY_F2 = (GLFW_KEY_SPECIAL+3);
-static const int GLFW_KEY_F3 = (GLFW_KEY_SPECIAL+4);
-static const int GLFW_KEY_F4 = (GLFW_KEY_SPECIAL+5);
-static const int GLFW_KEY_F5 = (GLFW_KEY_SPECIAL+6);
-static const int GLFW_KEY_F6 = (GLFW_KEY_SPECIAL+7);
-static const int GLFW_KEY_F7 = (GLFW_KEY_SPECIAL+8);
-static const int GLFW_KEY_F8 = (GLFW_KEY_SPECIAL+9);
-static const int GLFW_KEY_F9 = (GLFW_KEY_SPECIAL+10);
-static const int GLFW_KEY_F10 = (GLFW_KEY_SPECIAL+11);
-static const int GLFW_KEY_F11 = (GLFW_KEY_SPECIAL+12);
-static const int GLFW_KEY_F12 = (GLFW_KEY_SPECIAL+13);
-static const int GLFW_KEY_F13 = (GLFW_KEY_SPECIAL+14);
-static const int GLFW_KEY_F14 = (GLFW_KEY_SPECIAL+15);
-static const int GLFW_KEY_F15 = (GLFW_KEY_SPECIAL+16);
-static const int GLFW_KEY_F16 = (GLFW_KEY_SPECIAL+17);
-static const int GLFW_KEY_F17 = (GLFW_KEY_SPECIAL+18);
-static const int GLFW_KEY_F18 = (GLFW_KEY_SPECIAL+19);
-static const int GLFW_KEY_F19 = (GLFW_KEY_SPECIAL+20);
-static const int GLFW_KEY_F20 = (GLFW_KEY_SPECIAL+21);
-static const int GLFW_KEY_F21 = (GLFW_KEY_SPECIAL+22);
-static const int GLFW_KEY_F22 = (GLFW_KEY_SPECIAL+23);
-static const int GLFW_KEY_F23 = (GLFW_KEY_SPECIAL+24);
-static const int GLFW_KEY_F24 = (GLFW_KEY_SPECIAL+25);
-static const int GLFW_KEY_F25 = (GLFW_KEY_SPECIAL+26);
-static const int GLFW_KEY_UP = (GLFW_KEY_SPECIAL+27);
-static const int GLFW_KEY_DOWN = (GLFW_KEY_SPECIAL+28);
-static const int GLFW_KEY_LEFT = (GLFW_KEY_SPECIAL+29);
-static const int GLFW_KEY_RIGHT = (GLFW_KEY_SPECIAL+30);
-static const int GLFW_KEY_LSHIFT = (GLFW_KEY_SPECIAL+31);
-static const int GLFW_KEY_RSHIFT = (GLFW_KEY_SPECIAL+32);
-static const int GLFW_KEY_LCTRL = (GLFW_KEY_SPECIAL+33);
-static const int GLFW_KEY_RCTRL = (GLFW_KEY_SPECIAL+34);
-static const int GLFW_KEY_LALT = (GLFW_KEY_SPECIAL+35);
-static const int GLFW_KEY_RALT = (GLFW_KEY_SPECIAL+36);
-static const int GLFW_KEY_TAB = (GLFW_KEY_SPECIAL+37);
-static const int GLFW_KEY_ENTER = (GLFW_KEY_SPECIAL+38);
-static const int GLFW_KEY_BACKSPACE = (GLFW_KEY_SPECIAL+39);
-static const int GLFW_KEY_INSERT = (GLFW_KEY_SPECIAL+40);
-static const int GLFW_KEY_DEL = (GLFW_KEY_SPECIAL+41);
-static const int GLFW_KEY_PAGEUP = (GLFW_KEY_SPECIAL+42);
-static const int GLFW_KEY_PAGEDOWN = (GLFW_KEY_SPECIAL+43);
-static const int GLFW_KEY_HOME = (GLFW_KEY_SPECIAL+44);
-static const int GLFW_KEY_END = (GLFW_KEY_SPECIAL+45);
-static const int GLFW_KEY_KP_0 = (GLFW_KEY_SPECIAL+46);
-static const int GLFW_KEY_KP_1 = (GLFW_KEY_SPECIAL+47);
-static const int GLFW_KEY_KP_2 = (GLFW_KEY_SPECIAL+48);
-static const int GLFW_KEY_KP_3 = (GLFW_KEY_SPECIAL+49);
-static const int GLFW_KEY_KP_4 = (GLFW_KEY_SPECIAL+50);
-static const int GLFW_KEY_KP_5 = (GLFW_KEY_SPECIAL+51);
-static const int GLFW_KEY_KP_6 = (GLFW_KEY_SPECIAL+52);
-static const int GLFW_KEY_KP_7 = (GLFW_KEY_SPECIAL+53);
-static const int GLFW_KEY_KP_8 = (GLFW_KEY_SPECIAL+54);
-static const int GLFW_KEY_KP_9 = (GLFW_KEY_SPECIAL+55);
-static const int GLFW_KEY_KP_DIVIDE = (GLFW_KEY_SPECIAL+56);
-static const int GLFW_KEY_KP_MULTIPLY = (GLFW_KEY_SPECIAL+57);
-static const int GLFW_KEY_KP_SUBTRACT = (GLFW_KEY_SPECIAL+58);
-static const int GLFW_KEY_KP_ADD = (GLFW_KEY_SPECIAL+59);
-static const int GLFW_KEY_KP_DECIMAL = (GLFW_KEY_SPECIAL+60);
-static const int GLFW_KEY_KP_EQUAL = (GLFW_KEY_SPECIAL+61);
-static const int GLFW_KEY_KP_ENTER = (GLFW_KEY_SPECIAL+62);
-static const int GLFW_KEY_KP_NUM_LOCK = (GLFW_KEY_SPECIAL+63);
-static const int GLFW_KEY_CAPS_LOCK = (GLFW_KEY_SPECIAL+64);
-static const int GLFW_KEY_SCROLL_LOCK = (GLFW_KEY_SPECIAL+65);
-static const int GLFW_KEY_PAUSE = (GLFW_KEY_SPECIAL+66);
-static const int GLFW_KEY_LSUPER = (GLFW_KEY_SPECIAL+67);
-static const int GLFW_KEY_RSUPER = (GLFW_KEY_SPECIAL+68);
-static const int GLFW_KEY_MENU = (GLFW_KEY_SPECIAL+69);
-static const int GLFW_KEY_LAST = GLFW_KEY_MENU;
-static const int GLFW_MOUSE_BUTTON_1 = 0;
-static const int GLFW_MOUSE_BUTTON_2 = 1;
-static const int GLFW_MOUSE_BUTTON_3 = 2;
-static const int GLFW_MOUSE_BUTTON_4 = 3;
-static const int GLFW_MOUSE_BUTTON_5 = 4;
-static const int GLFW_MOUSE_BUTTON_6 = 5;
-static const int GLFW_MOUSE_BUTTON_7 = 6;
-static const int GLFW_MOUSE_BUTTON_8 = 7;
-static const int GLFW_MOUSE_BUTTON_LAST = GLFW_MOUSE_BUTTON_8;
-static const int GLFW_MOUSE_BUTTON_LEFT = GLFW_MOUSE_BUTTON_1;
-static const int GLFW_MOUSE_BUTTON_RIGHT = GLFW_MOUSE_BUTTON_2;
-static const int GLFW_MOUSE_BUTTON_MIDDLE = GLFW_MOUSE_BUTTON_3;
-static const int GLFW_JOYSTICK_1 = 0;
-static const int GLFW_JOYSTICK_2 = 1;
-static const int GLFW_JOYSTICK_3 = 2;
-static const int GLFW_JOYSTICK_4 = 3;
-static const int GLFW_JOYSTICK_5 = 4;
-static const int GLFW_JOYSTICK_6 = 5;
-static const int GLFW_JOYSTICK_7 = 6;
-static const int GLFW_JOYSTICK_8 = 7;
-static const int GLFW_JOYSTICK_9 = 8;
-static const int GLFW_JOYSTICK_10 = 9;
-static const int GLFW_JOYSTICK_11 = 10;
-static const int GLFW_JOYSTICK_12 = 11;
-static const int GLFW_JOYSTICK_13 = 12;
-static const int GLFW_JOYSTICK_14 = 13;
-static const int GLFW_JOYSTICK_15 = 14;
-static const int GLFW_JOYSTICK_16 = 15;
-static const int GLFW_JOYSTICK_LAST = GLFW_JOYSTICK_16;
-static const int GLFW_WINDOW = 0x00010001;
-static const int GLFW_FULLSCREEN = 0x00010002;
-static const int GLFW_OPENED = 0x00020001;
-static const int GLFW_ACTIVE = 0x00020002;
-static const int GLFW_ICONIFIED = 0x00020003;
-static const int GLFW_ACCELERATED = 0x00020004;
-static const int GLFW_RED_BITS = 0x00020005;
-static const int GLFW_GREEN_BITS = 0x00020006;
-static const int GLFW_BLUE_BITS = 0x00020007;
-static const int GLFW_ALPHA_BITS = 0x00020008;
-static const int GLFW_DEPTH_BITS = 0x00020009;
-static const int GLFW_STENCIL_BITS = 0x0002000A;
-static const int GLFW_REFRESH_RATE = 0x0002000B;
-static const int GLFW_ACCUM_RED_BITS = 0x0002000C;
-static const int GLFW_ACCUM_GREEN_BITS = 0x0002000D;
-static const int GLFW_ACCUM_BLUE_BITS = 0x0002000E;
-static const int GLFW_ACCUM_ALPHA_BITS = 0x0002000F;
-static const int GLFW_AUX_BUFFERS = 0x00020010;
-static const int GLFW_STEREO = 0x00020011;
-static const int GLFW_WINDOW_NO_RESIZE = 0x00020012;
-static const int GLFW_FSAA_SAMPLES = 0x00020013;
-static const int GLFW_OPENGL_VERSION_MAJOR = 0x00020014;
-static const int GLFW_OPENGL_VERSION_MINOR = 0x00020015;
-static const int GLFW_OPENGL_FORWARD_COMPAT = 0x00020016;
-static const int GLFW_OPENGL_DEBUG_CONTEXT = 0x00020017;
-static const int GLFW_OPENGL_PROFILE = 0x00020018;
-static const int GLFW_OPENGL_CORE_PROFILE = 0x00050001;
-static const int GLFW_OPENGL_COMPAT_PROFILE = 0x00050002;
-static const int GLFW_MOUSE_CURSOR = 0x00030001;
-static const int GLFW_STICKY_KEYS = 0x00030002;
-static const int GLFW_STICKY_MOUSE_BUTTONS = 0x00030003;
-static const int GLFW_SYSTEM_KEYS = 0x00030004;
-static const int GLFW_KEY_REPEAT = 0x00030005;
-static const int GLFW_AUTO_POLL_EVENTS = 0x00030006;
-static const int GLFW_WAIT = 0x00040001;
-static const int GLFW_NOWAIT = 0x00040002;
-static const int GLFW_PRESENT = 0x00050001;
-static const int GLFW_AXES = 0x00050002;
-static const int GLFW_BUTTONS = 0x00050003;
-static const int GLFW_NO_RESCALE_BIT = 0x00000001;
-static const int GLFW_ORIGIN_UL_BIT = 0x00000002;
-static const int GLFW_BUILD_MIPMAPS_BIT = 0x00000004;
-static const int GLFW_ALPHA_MAP_BIT = 0x00000008;
-static const int GLFW_INFINITY = 100000;
-
-typedef struct {
-    int Width, Height;
-    int RedBits, BlueBits, GreenBits;
-} GLFWvidmode;
-
-
-typedef struct {
-    int Width, Height;
-    int Format;
-    int BytesPerPixel;
-    unsigned char *Data;
-} GLFWimage;
-
-typedef int GLFWthread;
-typedef void * GLFWmutex;
-typedef void * GLFWcond;
-
-typedef void ( * GLFWwindowsizefun)(int,int);
-typedef int ( * GLFWwindowclosefun)(void);
-typedef void ( * GLFWwindowrefreshfun)(void);
-typedef void ( * GLFWmousebuttonfun)(int,int);
-typedef void ( * GLFWmouseposfun)(int,int);
-typedef void ( * GLFWmousewheelfun)(int);
-typedef void ( * GLFWkeyfun)(int,int);
-typedef void ( * GLFWcharfun)(int,int);
-typedef void ( * GLFWthreadfun)(void *);
-
- int glfwInit( void );
- void glfwTerminate( void );
- void glfwGetVersion( int *major, int *minor, int *rev );
-
-
- int glfwOpenWindow( int width, int height, int redbits, int greenbits, int bluebits, int alphabits, int depthbits, int stencilbits, int mode );
- void glfwOpenWindowHint( int target, int hint );
- void glfwCloseWindow( void );
- void glfwSetWindowTitle( const char *title );
- void glfwGetWindowSize( int *width, int *height );
- void glfwSetWindowSize( int width, int height );
- void glfwSetWindowPos( int x, int y );
- void glfwIconifyWindow( void );
- void glfwRestoreWindow( void );
- void glfwSwapBuffers( void );
- void glfwSwapInterval( int interval );
- int glfwGetWindowParam( int param );
- void glfwSetWindowSizeCallback( GLFWwindowsizefun cbfun );
- void glfwSetWindowCloseCallback( GLFWwindowclosefun cbfun );
- void glfwSetWindowRefreshCallback( GLFWwindowrefreshfun cbfun );
-
-
- int glfwGetVideoModes( GLFWvidmode *list, int maxcount );
- void glfwGetDesktopMode( GLFWvidmode *mode );
-
-
- void glfwPollEvents( void );
- void glfwWaitEvents( void );
- int glfwGetKey( int key );
- int glfwGetMouseButton( int button );
- void glfwGetMousePos( int *xpos, int *ypos );
- void glfwSetMousePos( int xpos, int ypos );
- int glfwGetMouseWheel( void );
- void glfwSetMouseWheel( int pos );
- void glfwSetKeyCallback( GLFWkeyfun cbfun );
- void glfwSetCharCallback( GLFWcharfun cbfun );
- void glfwSetMouseButtonCallback( GLFWmousebuttonfun cbfun );
- void glfwSetMousePosCallback( GLFWmouseposfun cbfun );
- void glfwSetMouseWheelCallback( GLFWmousewheelfun cbfun );
-
-
- int glfwGetJoystickParam( int joy, int param );
- int glfwGetJoystickPos( int joy, float *pos, int numaxes );
- int glfwGetJoystickButtons( int joy, unsigned char *buttons, int numbuttons );
-
-
- double glfwGetTime( void );
- void glfwSetTime( double time );
- void glfwSleep( double time );
-
-
- int glfwExtensionSupported( const char *extension );
- void* glfwGetProcAddress( const char *procname );
- void glfwGetGLVersion( int *major, int *minor, int *rev );
-
-
- GLFWthread glfwCreateThread( GLFWthreadfun fun, void *arg );
- void glfwDestroyThread( GLFWthread ID );
- int glfwWaitThread( GLFWthread ID, int waitmode );
- GLFWthread glfwGetThreadID( void );
- GLFWmutex glfwCreateMutex( void );
- void glfwDestroyMutex( GLFWmutex mutex );
- void glfwLockMutex( GLFWmutex mutex );
- void glfwUnlockMutex( GLFWmutex mutex );
- GLFWcond glfwCreateCond( void );
- void glfwDestroyCond( GLFWcond cond );
- void glfwWaitCond( GLFWcond cond, GLFWmutex mutex, double timeout );
- void glfwSignalCond( GLFWcond cond );
- void glfwBroadcastCond( GLFWcond cond );
- int glfwGetNumberOfProcessors( void );
-
-
- void glfwEnable( int token );
- void glfwDisable( int token );
-
-
- int glfwReadImage( const char *name, GLFWimage *img, int flags );
- int glfwReadMemoryImage( const void *data, long size, GLFWimage *img, int flags );
- void glfwFreeImage( GLFWimage *img );
- int glfwLoadTexture2D( const char *name, int flags );
- int glfwLoadMemoryTexture2D( const void *data, long size, int flags );
- int glfwLoadTextureImage2D( GLFWimage *img, int flags );
-	]]
-	
 	-- STB_Image
 	ffi.cdef[[
 enum
@@ -3322,17 +3064,83 @@ extern char *stbi_zlib_decode_noheader_malloc(const char *buffer, int len, int *
 extern int stbi_zlib_decode_noheader_buffer(char *obuffer, int olen, const char *ibuffer, int ilen);
 	]]
 	
-	if ffi.os == "Windows" then
-		gl = ffi.load("opengl32")
-		glu = ffi.load("glu32")
-	else
-		gl = ffi.load("GL")
-		glu = ffi.load("GLU")
-	end
+	-- Windows stuff
+	package.loaded["WTypes"] = require "winapi.WTypes"
+	package.loaded["WinBase"] = true -- kernel32_ffi.lua loads this for some reason, it just pollutes the global environment
+	ffi.cdef[[
+typedef struct _BY_HANDLE_FILE_INFORMATION {
+    DWORD dwFileAttributes;
+    FILETIME ftCreationTime;
+    FILETIME ftLastAccessTime;
+    FILETIME ftLastWriteTime;
+    DWORD dwVolumeSerialNumber;
+    DWORD nFileSizeHigh;
+    DWORD nFileSizeLow;
+    DWORD nNumberOfLinks;
+    DWORD nFileIndexHigh;
+    DWORD nFileIndexLow;
+} BY_HANDLE_FILE_INFORMATION, *PBY_HANDLE_FILE_INFORMATION, *LPBY_HANDLE_FILE_INFORMATION;
+	]]
+	gdiffi = require "winapi.gdi32_ffi"
+	userffi = require "winapi.user32_ffi"
+	kernelffi = require "winapi.kernel32_ffi"
+	ffi.cdef[[
+// Additions to windows api
+typedef struct {
+    BYTE BlendOp;
+    BYTE BlendFlags;
+    BYTE SourceConstantAlpha;
+    BYTE AlphaFormat; 
+} BLENDFUNCTION;
+const static int WS_EX_TOOLWINDOW = 128;
+const static int WS_EX_LAYERED = 0x80000;
+const static int WS_EX_TOPMOST = 8;
+const static int ULW_ALPHA = 0x02;
+int ReleaseDC(HWND, HDC);
+BOOL ClientToScreen(HWND,POINT*);
+BOOL UpdateLayeredWindow(HWND,HDC,POINT*,SIZE*,HDC,POINT*,COLORREF,BLENDFUNCTION*,DWORD);
+
+// WGL Stuff
+typedef HANDLE HGLRC;
+typedef HANDLE HPBUFFERARB;
+HGLRC wglCreateContext(HDC);
+BOOL wglMakeCurrent(HDC,HGLRC);
+void* wglGetProcAddress(LPCSTR);
+
+// WGL_ARB_pbuffer.
+typedef HPBUFFERARB (* PFNWGLCREATEPBUFFERARBPROC) (HDC hDC, int iPixelFormat, int iWidth, int iHeight, const int *piAttribList);
+typedef HDC (* PFNWGLGETPBUFFERDCARBPROC) (HPBUFFERARB hPbuffer);
+typedef int (* PFNWGLRELEASEPBUFFERDCARBPROC) (HPBUFFERARB hPbuffer, HDC hDC);
+typedef BOOL (* PFNWGLDESTROYPBUFFERARBPROC) (HPBUFFERARB hPbuffer);
+typedef BOOL (* PFNWGLQUERYPBUFFERARBPROC) (HPBUFFERARB hPbuffer, int iAttribute, int *piValue);
+
+// WGL_ARB_pixel_format.
+typedef BOOL (* PFNWGLGETPIXELFORMATATTRIBIVARBPROC) (HDC hdc, int iPixelFormat, int iLayerPlane, UINT nAttributes, const int *piAttributes, int *piValues);
+typedef BOOL (* PFNWGLGETPIXELFORMATATTRIBFVARBPROC) (HDC hdc, int iPixelFormat, int iLayerPlane, UINT nAttributes, const int *piAttributes, FLOAT *pfValues);
+typedef BOOL (* PFNWGLCHOOSEPIXELFORMATARBPROC) (HDC hdc, const int *piAttribIList, const FLOAT *pfAttribFList, UINT nMaxFormats, int *piFormats, UINT *nNumFormats);
+
+static const int WGL_DRAW_TO_PBUFFER_ARB        = 0x202D;
+static const int WGL_MAX_PBUFFER_PIXELS_ARB     = 0x202E;
+static const int WGL_MAX_PBUFFER_WIDTH_ARB      = 0x202F;
+static const int WGL_MAX_PBUFFER_HEIGHT_ARB     = 0x2030;
+static const int WGL_PBUFFER_LARGEST_ARB        = 0x2033;
+static const int WGL_PBUFFER_WIDTH_ARB          = 0x2034;
+static const int WGL_PBUFFER_HEIGHT_ARB         = 0x2035;
+static const int WGL_PBUFFER_LOST_ARB           = 0x2036;
+static const int WGL_SUPPORT_OPENGL_ARB         = 0x2010;
+static const int WGL_DOUBLE_BUFFER_ARB          = 0x2011;
+static const int WGL_RED_BITS_ARB               = 0x2015;
+static const int WGL_GREEN_BITS_ARB             = 0x2017;
+static const int WGL_BLUE_BITS_ARB              = 0x2019;
+static const int WGL_ALPHA_BITS_ARB             = 0x201B;
+static const int WGL_DEPTH_BITS_ARB             = 0x2022;
+static const int WGL_STENCIL_BITS_ARB           = 0x2023;
+]]
+	
+	gl = ffi.load("opengl32")
+	glu = ffi.load("glu32")
 	LuJGL.gl = gl
 	LuJGL.glu = glu
-	glfw = ffi.load("glfw")
-	LuJGL.glfw = glfw
 	
 	local ok, stb_image = pcall(ffi.load, "stb_image")
 	if ok then
@@ -3341,7 +3149,7 @@ extern int stbi_zlib_decode_noheader_buffer(char *obuffer, int olen, const char 
 	
 	LuJGL.glext = setmetatable({}, {
 		__index = function(self, k)
-			local ptr = glfw.glfwGetProcAddress(k)
+			local ptr = gl.wglGetProcAddress(k)
 			if ptr == nil then error("glfwGetProcAddress failed for "..k.." (are you accessing the right function?)",2) end
 			local ok, cptr = pcall(ffi.cast, string.format("PFN%sPROC", string.upper(k)), ptr)
 			if not ok then error("couldn't cast: "..k,2) end
@@ -3349,6 +3157,14 @@ extern int stbi_zlib_decode_noheader_buffer(char *obuffer, int olen, const char 
 			return cptr
 		end,
 	})
+	glext = LuJGL.glext
+end
+
+local function zassert(v, msg)
+	if v == 0 then error(msg or "Error",2) else return v end
+end
+local function nassert(v, msg)
+	if v == nil then error(msg or "Error",2) else return v end
 end
 
 local function xpcall_traceback_hook(err)
@@ -3371,70 +3187,174 @@ local function call_callback(func,...)
 	return ok, msg
 end
 
---- Initializes GLFW and creates a new window.
+--- Creates a transparent window
 -- @param name The window name
--- @param w (Optional) Window width. Defaults to 640.
--- @param h (Optional) Window height. Defaults to 480.
--- @param hints (Optional) Table of values to be passed to glfwOpenWindowHint. Defaults to {glfw.GLFW_WINDOW_NO_RESIZE=true}
-function LuJGL.initialize(name, w, h, hints)
-	w = w or 640
-	h = h or 480
+-- @param w (Optional) Window width. Defaults to the size of the primary display.
+-- @param h (Optional) Window height. Defaults to the size of the primary display.
+function LuJGL.initialize(name, w, h)
+	w = w or C.GetSystemMetrics(userffi.CXSCREEN)
+	h = h or C.GetSystemMetrics(userffi.CYSCREEN)
 	
-	if glfw.glfwInit() == 0 then
-		error("error initializing glfw",0)
-	end
+	assert(w % 4 == 0 and h % 4 == 0, "Dimensions must be multiples of 4")
+	LuJGL.width = w
+	LuJGL.height = h
+	antigc.title = name
 	
-	if hints then
-		for k,v in pairs(hints) do glfw.glfwOpenWindowHint(k,v) end
-	else
-		glfw.glfwOpenWindowHint(glfw.GLFW_WINDOW_NO_RESIZE, true)
-	end
+	-- -----------------------------------------------------------------------------
+	-- Initialize window
+	local hinstance = nassert(C.GetModuleHandleA(nil),"Failed to get hinstance")
+	antigc.hinstance = hinstance
 	
-	-- TODO: Whats a good default for the number of stencil bits?
-	if glfw.glfwOpenWindow(w,h,8,8,8,8,24,8,glfw.GLFW_WINDOW) == 0 then
-		glfw.glfwTerminate()
-		error("error initializing glfw window",0)
-	end
-	
-	local size_buffer = ffi.new("int[2]")
-	glfw.glfwGetWindowSize(size_buffer, size_buffer + 1)
-	LuJGL.width = size_buffer[0]
-	LuJGL.height = size_buffer[1]
-	
-	glfw.glfwSetWindowTitle(name)
-	
-	glfw.glfwSetWindowCloseCallback(create_callback(function()
-		local ok, msg = call_callback(event_cb, "close")
-		if ok and not msg then stop = true end
-		return false
-	end))
-	
-	glfw.glfwSetKeyCallback(create_callback(function(key, down)
-		if key <= 255 then
-			key = string.char(key):lower()
+	local windowproc = function(hwnd, msg, wparam, lparam)
+		if msg == userffi.WM_CREATE then --CREATE
+			--C.timerBeginPeriod(1)
+			--C.SetTimer(hwnd, ffi.cast("unsigned int*",1), 1000, 0)
+			return 0
+		elseif msg == userffi.WM_DESTROY then --DESTROY
+			--C.KillTimer(hwnd, ffi.cast("unsigned int*",1))
+			--C.timerEndPeriod(1)
+			C.PostQuitMessage(0)
+			return 0
+		elseif msg == userffi.WM_TIMER then --TIMER
+			
 		end
-		call_callback(event_cb, "key", down ~= 0, key)
-	end))
+		
+		return C.DefWindowProcA(hwnd, msg, wparam, lparam)
+	end
 	
-	glfw.glfwSetMouseButtonCallback(create_callback(function(button, action)
-		glfw.glfwGetMousePos(int_buffer,int_buffer+1)
-		call_callback(event_cb, "mouse", button, action ~= 0, int_buffer[0], int_buffer[1])
-	end))
+	local windowClass = ffi.new("WNDCLASSEXA",{
+		cbSize = ffi.sizeof("WNDCLASSEXA"),
+		style = bit.bor(userffi.CS_VREDRAW, userffi.CS_HREDRAW),
+		lpfnWndProc = windowproc,
+		cbClsExtra = 0,
+		cbWndExtra = 0,
+		hInstance = hinstance,
+		hIcon = nil, --C.LoadIconA(nil, ffi.cast("const char*", 32512)), --IDI_APPLICATION
+		hCursor = C.LoadCursorA(nil, ffi.cast("const char*", 32512)), --IDC_ARROW
+		hbrBackground = nil,
+		lpszMenuName = nil,
+		lpszClassName = antigc.windowClassName,
+		hIconSm = nil,
+	})
+	antigc.windowClass = windowClass
+	local windowclassid = ffi.cast("const char*",zassert(C.RegisterClassExA(windowClass),"Couldn't register window class"))
+	antigc.windowClassID = windowclassid
 	
-	glfw.glfwSetMousePosCallback(create_callback(function(x,y)
-		call_callback(event_cb, "motion", x, y)
-	end))
+	local window = C.CreateWindowExA(bit.bor(C.WS_EX_LAYERED, C.WS_EX_TOPMOST),
+		windowclassid, name, userffi.WS_POPUP, 0, 0, w, h, nil, nil, hinstance, nil)
+	if window == nil then error("Couldn't create window: "..C.GetLastError()) end
+	antigc.window = window
 	
-	local last_wheel_pos = 0
-	glfw.glfwSetMouseWheelCallback(create_callback(function(pos)
-		call_callback(event_cb, "wheel", pos - last_wheel_pos, pos)
-		last_wheel_pos = pos
-	end))
+	-- -----------------------------------------------------------------------------
+	-- Initialize OpenGL
+	
+	local hdc = nassert(C.GetDC(window),"Couldn't get draw device")
+	antigc.hdc = hdc
+	
+	local pixelFormat = ffi.new("PIXELFORMATDESCRIPTOR",{
+		nSize = ffi.sizeof("PIXELFORMATDESCRIPTOR"),
+		nVersion = 1,
+		dwFlags = bit.bor(gdiffi.PFD_DRAW_TO_WINDOW, gdiffi.PFD_SUPPORT_OPENGL),
+		iPixelType = gdiffi.PFD_TYPE_RGBA,
+		cColorBits = 24,
+		cDepthBits = 16,
+		iLayerType = gdiffi.PFD_MAIN_PLANE,
+	})
+	zassert(C.SetPixelFormat(hdc, C.ChoosePixelFormat(hdc, pixelFormat), pixelFormat))
+	
+	-- Create dummy context to get pbuffer functions
+	local hrc = nassert(gl.wglCreateContext(hdc), "Couldn't create opengl context")
+	zassert(gl.wglMakeCurrent(hdc, hrc), "Couldn't wglMakeCurrent")
+	antigc.dummyrc = hrc
+	
+	-- Create PBuffer and new render context
+	local attriblist = ffi.new("int[?]", 19,
+		gl.WGL_DRAW_TO_PBUFFER_ARB, true,
+		gl.WGL_SUPPORT_OPENGL_ARB, true,
+		gl.WGL_DOUBLE_BUFFER_ARB, true,
+		gl.WGL_RED_BITS_ARB, 8,
+		gl.WGL_GREEN_BITS_ARB, 8,
+		gl.WGL_BLUE_BITS_ARB, 8,
+		gl.WGL_ALPHA_BITS_ARB, 8,
+		gl.WGL_DEPTH_BITS_ARB, 16,
+		gl.WGL_STENCIL_BITS_ARB, 8,
+		0)
+	local format, matchingFormats = ffi.new("int[1]"), ffi.new("unsigned int[1]")
+	
+	zassert(glext.wglChoosePixelFormatARB(hdc, attriblist, nil, 1, format, matchingFormats))
+	local pbuffer = nassert(glext.wglCreatePbufferARB(hdc, format[0], w, h, nil))
+	local pbufferdc = nassert(glext.wglGetPbufferDCARB(pbuffer))
+	local pbufferrc = nassert(gl.wglCreateContext(pbufferdc))
+	antigc.pbuffer = pbuffer
+	antigc.pbufferdc = pbufferdc
+	antigc.pbufferrc = pbufferrc
+	
+	gl.wglMakeCurrent(hdc, nil)
+	C.ReleaseDC(window, hdc)
+	hdc = nil
+	antigc.dummyhdc = nil
+	gl.wglMakeCurrent(pbufferdc, pbufferrc)
+	
+	-- -----------------------------------------------------------------------------
+	-- Initialize buffer image
+	
+	local imagehdc = C.CreateCompatibleDC(nil)
+	antigc.imagehdc = imagehdc
+	
+	local bitmapinfo = ffi.new("BITMAPINFO")
+	bitmapinfo.bmiHeader.biSize = ffi.sizeof("BITMAPINFOHEADER")
+	bitmapinfo.bmiHeader.biBitCount = 32
+	bitmapinfo.bmiHeader.biWidth = w
+	bitmapinfo.bmiHeader.biHeight = -h
+	bitmapinfo.bmiHeader.biCompression = 0 -- BI_RGB
+	bitmapinfo.bmiHeader.biPlanes = 1
+	antigc.bitmapinfo = bitmapinfo
+	
+	local pixels = ffi.new("void*[1]")
+	local bitmap = nassert(C.CreateDIBSection(imagehdc, bitmapinfo, 0, pixels, nil, 0))
+	pixels = ffi.cast("unsigned char*",pixels[0])
+	antigc.pixels = pixels
+	antigc.bitmap = bitmap
+	antigc.pitch = bit.rshift(bit.band((w*32+31), bit.bnot(31)),3)
+	C.GdiFlush()
+	
+	-- -----------------------------------------------------------------------------
+	-- Show the window
+	C.ShowWindow(window, 5)--SW_SHOW
+	C.UpdateWindow(window)
 end
 
 function LuJGL.deinitialize()
-	glfw.glfwCloseWindow()
-	glfw.glfwTerminate()
+	if antigc.pbuffer then
+		gl.wglDeleteContext(antigc.pbufferrc)
+		glext.wglReleasePbufferDCARB(antigc.pbuffer, antigc.pbufferdc)
+		glext.wglDestroyPbufferARB(antigc.pbuffer)
+		antigc.pbuffer, antigc.pbufferrc, antigc.pbufferdc = nil, nil, nil
+	end
+	
+	if antigc.hdc then
+		if antigc.dummyrc then
+			gl.wglMakeCurrent(antigc.hdc,0)
+			gl.wglDeleteContext(antigc.dummyrc)
+			antigc.dummyrc = nil
+		end
+		
+		C.ReleaseDC(antigc.window, antigc.hdc)
+		antigc.hdc = nil
+	end
+	
+	-- TODO: ImageDestroy
+	if antigc.bitmap then
+		C.DeleteObject(antigc.bitmap)
+		antigc.bitmap = nil
+	end
+	
+	if antigc.imagehdc then
+		C.DeleteDC(antigc.imagehdc)
+		antigc.imagehdc = nil
+	end
+	antigc.pixels = nil
+	antigc.bitmapinfo = nil
 end
 
 --- Sets the idle callback. This is where the "thinking" code should go.
@@ -3462,16 +3382,53 @@ end
 
 --- Enters the main loop.
 function LuJGL.mainLoop()
-	glfw.glfwSetTime(0)
-	LuJGL.frameCount = 0
+	local window = nassert(antigc.window)
+	local imghdc = nassert(antigc.imagehdc)
+	local imgpixels = antigc.pixels
+	local pitch = antigc.pitch
+	local w, h = LuJGL.width, LuJGL.height
+	local msg = ffi.new("MSG")
+	local pointdest, pointsrc = ffi.new("POINT"), ffi.new("POINT",0,0)
+	local size = ffi.new("SIZE",w,h)
+	local blendfunc = ffi.new("BLENDFUNCTION", 0, 0, 255, 1)
+	local pixelbuffer = ffi.new("unsigned char[?]",w*h*4)
+	
 	while not stop do
-		call_callback(idle_cb)
-		call_callback(render_cb)
-		glfw.glfwSwapBuffers()
-		LuJGL.frameCount = LuJGL.frameCount + 1
+		if C.PeekMessageA(msg, nil, 0, 0, userffi.PM_REMOVE) ~= 0 then
+			if msg.message == userffi.WM_QUIT then
+				break
+			end
+			
+			C.TranslateMessage(msg)
+			C.DispatchMessageA(msg)
+		else
+			call_callback(idle_cb)
+			call_callback(render_cb)
+			C.SwapBuffers(antigc.pbufferdc)
+			
+			-- Copy pbuffer to image
+			gl.glPixelStorei(glconst.GL_PACK_ALIGNMENT,1)
+			gl.glReadPixels(0, 0, w, h, glconst.GL_BGRA_EXT, glconst.GL_UNSIGNED_BYTE, pixelbuffer)
+			for i=0,h-1 do
+				ffi.copy(imgpixels+pitch*i, pixelbuffer+(((h-1)-i)*(w*4)), w*4)
+			end
+			
+			-- Do PreMult Alpha
+			for i=0,w*h*4-1,4 do
+				imgpixels[i  ] = imgpixels[i  ]*imgpixels[i+3]/255
+				imgpixels[i+1] = imgpixels[i+1]*imgpixels[i+3]/255
+				imgpixels[i+2] = imgpixels[i+2]*imgpixels[i+3]/255
+			end
+			
+			-- RedrawLayeredWindow
+			local hdc = C.GetDC(window)
+			local prevobj = C.SelectObject(antigc.imagehdc, antigc.bitmap)
+			C.ClientToScreen(window, pointdest)
+			C.UpdateLayeredWindow(window, hdc, pointdest, size, imghdc, pointsrc, 0, blendfunc, C.ULW_ALPHA)
+			C.SelectObject(antigc.imagehdc, prevobj)
+			C.ReleaseDC(window, hdc)
+		end
 	end
-	glfw.glfwCloseWindow()
-	glfw.glfwTerminate()
 end
 
 --- Signals the main loop to terminate. This simply sets a flag; this function
@@ -3480,17 +3437,20 @@ function LuJGL.signalQuit()
 	stop = true
 end
 
---- Gets the time since the main loop started in seconds
+-- Gets the time since the main loop started in seconds
+--[[
 function LuJGL.getTime()
 	return glfw.glfwGetTime()
 end
+]]
 
 -- -- Some helful utilities
 
+--[[
 do
 	local last_framecount = 0
 	local last_time = 0
-	--- Returns (frames / seconds) since the last call to this function
+	-- Returns (frames / seconds) since the last call to this function
 	function LuJGL.fps()
 		local count, now = LuJGL.frameCount, LuJGL.getTime()
 		local num = (count - last_framecount) / (now - last_time)
@@ -3499,6 +3459,7 @@ do
 		return num
 	end
 end
+]]
 
 if LuJGL.stb_image then
 	--- Loads an image file to a texture, using stb_image
@@ -3595,7 +3556,7 @@ end
 -- @return The pointer to the functon, appropriately casted, or nil if no function definition was found.
 function LuJGL.getProcAddress(func)
 	if ext_function_cache[func] then return ext_function_cache[func] end
-	local ptr = glfw.glfwGetProcAddress(func)
+	local ptr = gl.wglGetProcAddress(func)
 	local ok, cptr = pcall(ffi.cast, string.format("PFN%sPROC", string.upper(func)), ptr)
 	if not ok then return nil end
 	ext_function_cache[func] = cptr

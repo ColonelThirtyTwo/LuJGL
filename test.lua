@@ -20,7 +20,7 @@ CubeVerticies.f = ffi.new("const float[6][4]", {
 })
 
 print("Initializing window")
-lujgl.initialize("Test App",nil,nil,{[lujgl.glfw.GLFW_WINDOW_NO_RESIZE]=true,[lujgl.glfw.GLFW_FSAA_SAMPLES]=8})
+lujgl.initialize("Test App")
 
 local gl = lujgl.gl
 local glconst = lujgl.glconst
@@ -28,7 +28,7 @@ local glu = lujgl.glu
 
 local imgtx = lujgl.loadTexture("test.png", nil, false, false)
 
-gl.glEnable(glconst.GL_DEPTH_TEST);
+gl.glEnable(glconst.GL_DEPTH_TEST)
 
 gl.glMatrixMode(glconst.GL_PROJECTION)
 glu.gluPerspective(60,lujgl.width / lujgl.height,0.01, 1000)
@@ -52,6 +52,7 @@ print("Rotation Axis:", rotx, roty, rotz)
 print("Box Position:", boxx, boxy, boxz)
 
 -- Try loading an extension
+--[[
 do
 	if lujgl.glfw.glfwExtensionSupported("GL_ARB_shader_objects") ~= 0 then
 		print("Shader objects supported. Trying to fetch address for glLinkProgramARB.")
@@ -65,6 +66,7 @@ do
 		print("Shader objects not supported.")
 	end
 end
+]]
 
 function render()
 	gl.glClear(bit.bor(glconst.GL_COLOR_BUFFER_BIT, glconst.GL_DEPTH_BUFFER_BIT));
@@ -94,7 +96,8 @@ function render()
 	
 	gl.glPushMatrix()
 	gl.glTranslated(boxx, boxy, boxz)
-	gl.glRotated(lujgl.getTime()*10, rotx, roty, rotz)
+	--gl.glRotated(lujgl.getTime()*10, rotx, roty, rotz)
+	gl.glRotated(os.clock()*10, rotx, roty, rotz)
 	for i=0,5 do
 		gl.glBegin(glconst.GL_QUADS)
 		gl.glNormal3fv(CubeVerticies.n[i])
