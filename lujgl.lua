@@ -10,7 +10,6 @@ local gdiffi, userffi, kernelffi
 local antigc = {
 	windowClassName = "GLLayeredWindowClass",
 }
-local hinstance
 
 local int_buffer = ffi.new("int[2]")
 
@@ -3101,6 +3100,8 @@ BOOL ClientToScreen(HWND,POINT*);
 BOOL UpdateLayeredWindow(HWND,HDC,POINT*,SIZE*,HDC,POINT*,COLORREF,BLENDFUNCTION*,DWORD);
 BOOL DeleteObject(HGDIOBJ);
 BOOL DeleteDC(HDC);
+UINT_PTR SetTimer(HWND, UINT_PTR, UINT, void*);
+BOOL KillTimer(HWND, UINT_PTR);
 
 // WGL Stuff
 typedef HANDLE HGLRC;
@@ -3209,17 +3210,19 @@ function LuJGL.initialize(name, w, h)
 	antigc.hinstance = hinstance
 	
 	local windowproc = function(hwnd, msg, wparam, lparam)
-		if msg == userffi.WM_CREATE then --CREATE
+		if msg == userffi.WM_CREATE then
 			--C.timerBeginPeriod(1)
-			--C.SetTimer(hwnd, ffi.cast("unsigned int*",1), 1000, 0)
+			C.SetTimer(hwnd, 1, 1000, nil)
 			return 0
-		elseif msg == userffi.WM_DESTROY then --DESTROY
-			--C.KillTimer(hwnd, ffi.cast("unsigned int*",1))
+		elseif msg == userffi.WM_DESTROY then
+			C.KillTimer(hwnd, 1)
 			--C.timerEndPeriod(1)
 			C.PostQuitMessage(0)
 			return 0
-		elseif msg == userffi.WM_TIMER then --TIMER
-			
+		elseif msg == userffi.WM_TIMER then
+			LuJGL._curfps = LuJGL.frameCount
+			print("FPS:",LuJGL.frameCount)
+			LuJGL.frameCount = 0
 		end
 		
 		return C.DefWindowProcA(hwnd, msg, wparam, lparam)
@@ -3573,6 +3576,8 @@ function LuJGL.mainLoop()
 			C.UpdateLayeredWindow(window, hdc, pointdest, size, imghdc, pointsrc, 0, blendfunc, C.ULW_ALPHA)
 			C.SelectObject(antigc.imagehdc, prevobj)
 			C.ReleaseDC(window, hdc)
+			
+			LuJGL.frameCount = LuJGL.frameCount + 1
 		end
 	end
 end
@@ -3584,28 +3589,15 @@ function LuJGL.signalQuit()
 end
 
 -- Gets the time since the main loop started in seconds
---[[
-function LuJGL.getTime()
-	return glfw.glfwGetTime()
-end
-]]
+-- TODO: Replace with better system
+LuJGL.getTime = os.clock
 
 -- -- Some helful utilities
 
---[[
-do
-	local last_framecount = 0
-	local last_time = 0
-	-- Returns (frames / seconds) since the last call to this function
-	function LuJGL.fps()
-		local count, now = LuJGL.frameCount, LuJGL.getTime()
-		local num = (count - last_framecount) / (now - last_time)
-		last_framecount = count
-		last_time = now
-		return num
-	end
+--- Returns (frames / seconds), calculated every second
+function LuJGL.fps()
+	return LuJGL._curfps
 end
-]]
 
 if LuJGL.stb_image then
 	--- Loads an image file to a texture, using stb_image
