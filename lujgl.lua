@@ -3099,6 +3099,8 @@ const static int ULW_ALPHA = 0x02;
 int ReleaseDC(HWND, HDC);
 BOOL ClientToScreen(HWND,POINT*);
 BOOL UpdateLayeredWindow(HWND,HDC,POINT*,SIZE*,HDC,POINT*,COLORREF,BLENDFUNCTION*,DWORD);
+BOOL DeleteObject(HGDIOBJ);
+BOOL DeleteDC(HDC);
 
 // WGL Stuff
 typedef HANDLE HGLRC;
@@ -3106,6 +3108,7 @@ typedef HANDLE HPBUFFERARB;
 HGLRC wglCreateContext(HDC);
 BOOL wglMakeCurrent(HDC,HGLRC);
 void* wglGetProcAddress(LPCSTR);
+BOOL wglDeleteContext(HGLRC);
 
 // WGL_ARB_pbuffer.
 typedef HPBUFFERARB (* PFNWGLCREATEPBUFFERARBPROC) (HDC hDC, int iPixelFormat, int iWidth, int iHeight, const int *piAttribList);
@@ -3150,7 +3153,7 @@ static const int WGL_STENCIL_BITS_ARB           = 0x2023;
 	LuJGL.glext = setmetatable({}, {
 		__index = function(self, k)
 			local ptr = gl.wglGetProcAddress(k)
-			if ptr == nil then error("glfwGetProcAddress failed for "..k.." (are you accessing the right function?)",2) end
+			if ptr == nil then error("wglGetProcAddress failed for "..k.." (are you accessing the right function?): "..C.GetLastError(),2) end
 			local ok, cptr = pcall(ffi.cast, string.format("PFN%sPROC", string.upper(k)), ptr)
 			if not ok then error("couldn't cast: "..k,2) end
 			rawset(self, k, cptr)
@@ -3240,7 +3243,7 @@ function LuJGL.initialize(name, w, h)
 	local windowclassid = ffi.cast("const char*",zassert(C.RegisterClassExA(windowClass),"Couldn't register window class"))
 	antigc.windowClassID = windowclassid
 	
-	local window = C.CreateWindowExA(bit.bor(C.WS_EX_LAYERED, C.WS_EX_TOPMOST),
+	local window = C.CreateWindowExA(bit.bor(C.WS_EX_LAYERED--[[, C.WS_EX_TOPMOST]]),
 		windowclassid, name, userffi.WS_POPUP, 0, 0, w, h, nil, nil, hinstance, nil)
 	if window == nil then error("Couldn't create window: "..C.GetLastError()) end
 	antigc.window = window
@@ -3289,6 +3292,11 @@ function LuJGL.initialize(name, w, h)
 	antigc.pbufferdc = pbufferdc
 	antigc.pbufferrc = pbufferrc
 	
+	-- Get some functions now
+	local notused
+	notused = glext.wglReleasePbufferDCARB
+	notused = glext.wglDestroyPbufferARB
+	
 	gl.wglMakeCurrent(hdc, nil)
 	C.ReleaseDC(window, hdc)
 	hdc = nil
@@ -3322,9 +3330,126 @@ function LuJGL.initialize(name, w, h)
 	-- Show the window
 	C.ShowWindow(window, 5)--SW_SHOW
 	C.UpdateWindow(window)
+	
+	-- -----------------------------------------------------------------------------
+	-- Create premultiplied alpha shader
+	local src_ptr, int_buffer = ffi.new("const char*[1]"), ffi.new("int[1]")
+	
+	local function checkShaderError(s, status)
+		glext.glGetObjectParameterivARB(s, glconst[status], int_buffer)
+		if int_buffer[0] == 0 then
+			local msg
+			glext.glGetObjectParameterivARB(s, glconst.GL_OBJECT_INFO_LOG_LENGTH_ARB, int_buffer)
+			if int_buffer[0] ~= 0 then
+				local log_buffer = ffi.new("char[?]",int_buffer[0])
+				glext.glGetInfoLogARB(s, int_buffer[0], int_buffer, log_buffer)
+				msg = ffi.string(log_buffer, int_buffer[0])
+			else
+				msg = "Unknown error"
+			end
+			error(msg, 0)
+		else
+			return s
+		end
+	end
+	local function addShader(prgm, typ, code)
+		local shaderobj = zassert(glext.glCreateShaderObjectARB(typ))
+		src_ptr[0] = code
+		int_buffer[0] = #code
+		glext.glShaderSourceARB(shaderobj, 1, src_ptr, int_buffer)
+		glext.glCompileShaderARB(shaderobj)
+		checkShaderError(shaderobj, "GL_OBJECT_COMPILE_STATUS_ARB")
+		glext.glAttachObjectARB(prgm, shaderobj)
+		return shaderobj
+	end
+	
+	local vertshader = [[
+	varying vec2 texturecoords;
+	void main()
+	{
+		gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;
+		texturecoords = gl_MultiTexCoord0.xy;
+	}
+	]]
+	local fragshader = [[
+	varying vec2 texturecoords;
+	uniform sampler2D tex;
+	void main()
+	{
+		vec4 texcolor = texture2D(tex,texturecoords);
+		//gl_FragColor = texcolor*vec4(texcolor.a,texcolor.a,texcolor.a,1);
+		gl_FragColor = texcolor;
+	}
+	]]
+	
+	local programobj = zassert(glext.glCreateProgramObjectARB(), "Couldn't create shader")
+	local vshader = addShader(programobj, glconst.GL_VERTEX_SHADER_ARB, vertshader)
+	local fshader = addShader(programobj, glconst.GL_FRAGMENT_SHADER_ARB, fragshader)
+	glext.glLinkProgramARB(programobj)
+	checkShaderError(programobj, "GL_OBJECT_LINK_STATUS_ARB")
+	glext.glValidateProgramARB(programobj)
+	checkShaderError(programobj, "GL_VALIDATE_STATUS")
+	
+	antigc.shaderid = programobj
+	antigc.vshader = vshader
+	antigc.fshader = fshader
+	
+	-- -----------------------------------------------------------------------------
+	-- Create main framebuffer
+	glext.glGenFramebuffersEXT(1,int_buffer)
+	local framebufferid = int_buffer[0]
+	
+	gl.glGenTextures(1,int_buffer)
+	local tx = int_buffer[0]
+	gl.glBindTexture(glconst.GL_TEXTURE_2D, tx)
+	gl.glTexImage2D(glconst.GL_TEXTURE_2D, 0, glconst.GL_RGBA, w, h, 0, glconst.GL_RGBA, glconst.GL_UNSIGNED_BYTE, nil)
+	gl.glTexParameteri(glconst.GL_TEXTURE_2D, glconst.GL_TEXTURE_WRAP_S, glconst.GL_REPEAT)
+	gl.glTexParameteri(glconst.GL_TEXTURE_2D, glconst.GL_TEXTURE_WRAP_T, glconst.GL_REPEAT)
+	gl.glTexParameteri(glconst.GL_TEXTURE_2D, glconst.GL_TEXTURE_BASE_LEVEL, 0)
+	gl.glTexParameteri(glconst.GL_TEXTURE_2D, glconst.GL_TEXTURE_MAX_LEVEL, 0)
+	
+	glext.glGenRenderbuffersEXT(1, int_buffer)
+	local rb = int_buffer[0]
+	glext.glBindRenderbufferEXT(glconst.GL_RENDERBUFFER_EXT, rb)
+	glext.glRenderbufferStorageEXT(glconst.GL_RENDERBUFFER_EXT, glconst.GL_DEPTH_COMPONENT24, w, h)
+	
+	glext.glBindFramebufferEXT(glconst.GL_FRAMEBUFFER_EXT, framebufferid)
+	glext.glFramebufferTexture2DEXT(glconst.GL_FRAMEBUFFER_EXT, glconst.GL_COLOR_ATTACHMENT0, glconst.GL_TEXTURE_2D, tx, 0)
+	glext.glFramebufferRenderbufferEXT(glconst.GL_FRAMEBUFFER_EXT, glconst.GL_DEPTH_ATTACHMENT_EXT, glconst.GL_RENDERBUFFER_EXT, rb)
+	
+	if glext.glCheckFramebufferStatusEXT(glconst.GL_FRAMEBUFFER_EXT) ~= glconst.GL_FRAMEBUFFER_COMPLETE_EXT then
+		error("Framebuffer not complete",0)
+	end
+	
+	antigc.fb = framebufferid
+	antigc.fbtex = tx
+	antigc.fbdepth = rb
+	LuJGL.framebuffer = framebufferid
+	
+	LuJGL.checkError()
 end
 
 function LuJGL.deinitialize()
+	if antigc.fb then
+		glext.glBindFramebufferEXT(glconst.GL_FRAMEBUFFER_EXT, 0)
+		
+		local int_buffer = ffi.new("int[1]")
+		int_buffer[0] = antigc.fbtex
+		gl.glDeleteTextures(1,int_buffer)
+		int_buffer[0] = antigc.fbdepth
+		glext.glDeleteRenderbuffersEXT(1,int_buffer)
+		int_buffer[0] = antigc.fb
+		glext.glDeleteFramebuffersEXT(1, int_buffer)
+	end
+	
+	if antigc.shaderid then
+		glext.glDetachObjectARB(antigc.shaderid, antigc.fshader)
+		glext.glDetachObjectARB(antigc.shaderid, antigc.vshader)
+		glext.glDeleteObjectARB(antigc.fshader)
+		glext.glDeleteObjectARB(antigc.vshader)
+		glext.glDeleteObjectARB(antigc.shaderid)
+	end
+	
 	if antigc.pbuffer then
 		gl.wglDeleteContext(antigc.pbufferrc)
 		glext.wglReleasePbufferDCARB(antigc.pbuffer, antigc.pbufferdc)
@@ -3334,7 +3459,7 @@ function LuJGL.deinitialize()
 	
 	if antigc.hdc then
 		if antigc.dummyrc then
-			gl.wglMakeCurrent(antigc.hdc,0)
+			gl.wglMakeCurrent(antigc.hdc,nil)
 			gl.wglDeleteContext(antigc.dummyrc)
 			antigc.dummyrc = nil
 		end
@@ -3402,22 +3527,48 @@ function LuJGL.mainLoop()
 			C.TranslateMessage(msg)
 			C.DispatchMessageA(msg)
 		else
+			-- Setup
+			glext.glUseProgramObjectARB(0)
+			glext.glBindFramebufferEXT(glconst.GL_FRAMEBUFFER, antigc.fb)
+			
+			-- Client rendering
 			call_callback(idle_cb)
 			call_callback(render_cb)
+			
+			-- Do premultiplied alpha postprocessing
+			glext.glBindFramebufferEXT(glconst.GL_FRAMEBUFFER, 0)
+			LuJGL.begin2D()
+			gl.glPushAttrib(glconst.GL_COLOR_BUFFER_BIT)
+			
+			gl.glClearColor(0,0,0,0)
+			gl.glClear(bit.bor(glconst.GL_COLOR_BUFFER_BIT, glconst.GL_DEPTH_BUFFER_BIT))
+			glext.glUseProgramObjectARB(antigc.shaderid)
+			gl.glEnable(glconst.GL_TEXTURE_2D)
+			gl.glEnable(glconst.GL_BLEND)
+			gl.glBindTexture(glconst.GL_TEXTURE_2D, antigc.fbtex)
+			
+			gl.glBegin(glconst.GL_QUADS)
+				gl.glTexCoord2d(0,0)
+				gl.glVertex2d(0,0)
+				gl.glTexCoord2d(1,0)
+				gl.glVertex2d(w,0)
+				gl.glTexCoord2d(1,1)
+				gl.glVertex2d(w,h)
+				gl.glTexCoord2d(0,1)
+				gl.glVertex2d(0,h)
+			gl.glEnd()
+			
+			gl.glPopAttrib()
+			LuJGL.end2D()
+			LuJGL.checkError()
 			C.SwapBuffers(antigc.pbufferdc)
 			
 			-- Copy pbuffer to image
+			-- TODO: Use BitBlt+wglGetPbufferDCARB
 			gl.glPixelStorei(glconst.GL_PACK_ALIGNMENT,1)
 			gl.glReadPixels(0, 0, w, h, glconst.GL_BGRA_EXT, glconst.GL_UNSIGNED_BYTE, pixelbuffer)
 			for i=0,h-1 do
 				ffi.copy(imgpixels+pitch*i, pixelbuffer+(((h-1)-i)*(w*4)), w*4)
-			end
-			
-			-- Do PreMult Alpha
-			for i=0,w*h*4-1,4 do
-				imgpixels[i  ] = imgpixels[i  ]*imgpixels[i+3]/255
-				imgpixels[i+1] = imgpixels[i+1]*imgpixels[i+3]/255
-				imgpixels[i+2] = imgpixels[i+2]*imgpixels[i+3]/255
 			end
 			
 			-- RedrawLayeredWindow
