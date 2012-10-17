@@ -3164,6 +3164,20 @@ static const int WGL_STENCIL_BITS_ARB           = 0x2023;
 	glext = LuJGL.glext
 end
 
+local profilebegin, profileend
+do
+	local profiles = {}
+	function profilebegin(section)
+		profiles[section] = LuJGL.getTime()
+	end
+	
+	function profileend(section)
+		local t = LuJGL.getTime()-profiles[section]
+		io.write("Profile ", section, ": ", tostring(t), "\n")
+		profiles[section] = nil
+	end
+end
+
 local function zassert(v, msg)
 	if v == 0 then error(msg or "Error",2) else return v end
 end
@@ -3429,6 +3443,16 @@ function LuJGL.initialize(name, w, h)
 	antigc.fbdepth = rb
 	LuJGL.framebuffer = framebufferid
 	
+	-- -----------------------------------------------------------------------------
+	-- Create pixel buffers
+	local pixelbuffers = ffi.new("unsigned int[2]")
+	glext.glGenBuffersARB(2,pixelbuffers)
+	glext.glBindBufferARB(glconst.GL_PIXEL_PACK_BUFFER_ARB, pixelbuffers[0])
+	glext.glBufferDataARB(glconst.GL_PIXEL_PACK_BUFFER_ARB, w*h*4, nil, glconst.GL_STREAM_READ_ARB)
+	glext.glBindBufferARB(glconst.GL_PIXEL_PACK_BUFFER_ARB, pixelbuffers[1])
+	glext.glBufferDataARB(glconst.GL_PIXEL_PACK_BUFFER_ARB, w*h*4, nil, glconst.GL_STREAM_READ_ARB)
+	antigc.pixelbuffers = pixelbuffers
+	
 	LuJGL.checkError()
 end
 
@@ -3519,6 +3543,8 @@ function LuJGL.mainLoop()
 	local pointdest, pointsrc = ffi.new("POINT"), ffi.new("POINT",0,0)
 	local size = ffi.new("SIZE",w,h)
 	local blendfunc = ffi.new("BLENDFUNCTION", 0, 0, 255, 1)
+	local pixelbuffers = antigc.pixelbuffers
+	local pixelbufferFlip = false
 	
 	while not stop do
 		if C.PeekMessageA(msg, nil, 0, 0, userffi.PM_REMOVE) ~= 0 then
@@ -3563,11 +3589,15 @@ function LuJGL.mainLoop()
 			gl.glPopAttrib()
 			LuJGL.end2D()
 			LuJGL.checkError()
-			C.SwapBuffers(antigc.pbufferdc)
+			--C.SwapBuffers(antigc.pbufferdc)
 			
-			-- Copy pbuffer to image
-			gl.glPixelStorei(glconst.GL_PACK_ALIGNMENT,1)
-			gl.glReadPixels(0, 0, w, h, glconst.GL_BGRA_EXT, glconst.GL_UNSIGNED_BYTE, imgpixels)
+			-- Copy drawn contents to the 'back' pixel buffer and read the 'front' one
+			glext.glBindBufferARB(glconst.GL_PIXEL_PACK_BUFFER_ARB, pixelbuffers[pixelbufferFlip and 1 or 0])
+			gl.glReadPixels(0, 0, w, h, glconst.GL_BGRA_EXT, glconst.GL_UNSIGNED_BYTE, nil)
+			glext.glBindBufferARB(glconst.GL_PIXEL_PACK_BUFFER_ARB, pixelbuffers[pixelbufferFlip and 0 or 1])
+			glext.glGetBufferSubData(glconst.GL_PIXEL_PACK_BUFFER_ARB, 0, w*h*4, imgpixels)
+			glext.glBindBufferARB(glconst.GL_PIXEL_PACK_BUFFER_ARB, 0)
+			pixelbufferFlip = not pixelbufferFlip
 			
 			-- RedrawLayeredWindow
 			local hdc = C.GetDC(window)
