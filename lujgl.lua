@@ -3516,7 +3516,6 @@ function LuJGL.mainLoop()
 	local pointdest, pointsrc = ffi.new("POINT"), ffi.new("POINT",0,0)
 	local size = ffi.new("SIZE",w,h)
 	local blendfunc = ffi.new("BLENDFUNCTION", 0, 0, 255, 1)
-	local pixelbuffer = ffi.new("unsigned char[?]",w*h*4)
 	
 	while not stop do
 		if C.PeekMessageA(msg, nil, 0, 0, userffi.PM_REMOVE) ~= 0 then
@@ -3548,13 +3547,13 @@ function LuJGL.mainLoop()
 			gl.glBindTexture(glconst.GL_TEXTURE_2D, antigc.fbtex)
 			
 			gl.glBegin(glconst.GL_QUADS)
-				gl.glTexCoord2d(0,0)
-				gl.glVertex2d(0,0)
-				gl.glTexCoord2d(1,0)
-				gl.glVertex2d(w,0)
-				gl.glTexCoord2d(1,1)
-				gl.glVertex2d(w,h)
 				gl.glTexCoord2d(0,1)
+				gl.glVertex2d(0,0)
+				gl.glTexCoord2d(1,1)
+				gl.glVertex2d(w,0)
+				gl.glTexCoord2d(1,0)
+				gl.glVertex2d(w,h)
+				gl.glTexCoord2d(0,0)
 				gl.glVertex2d(0,h)
 			gl.glEnd()
 			
@@ -3564,12 +3563,8 @@ function LuJGL.mainLoop()
 			C.SwapBuffers(antigc.pbufferdc)
 			
 			-- Copy pbuffer to image
-			-- TODO: Use BitBlt+wglGetPbufferDCARB
 			gl.glPixelStorei(glconst.GL_PACK_ALIGNMENT,1)
-			gl.glReadPixels(0, 0, w, h, glconst.GL_BGRA_EXT, glconst.GL_UNSIGNED_BYTE, pixelbuffer)
-			for i=0,h-1 do
-				ffi.copy(imgpixels+pitch*i, pixelbuffer+(((h-1)-i)*(w*4)), w*4)
-			end
+			gl.glReadPixels(0, 0, w, h, glconst.GL_BGRA_EXT, glconst.GL_UNSIGNED_BYTE, imgpixels)
 			
 			-- RedrawLayeredWindow
 			local hdc = C.GetDC(window)
