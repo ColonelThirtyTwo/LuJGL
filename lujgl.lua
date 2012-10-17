@@ -3105,40 +3105,10 @@ BOOL KillTimer(HWND, UINT_PTR);
 
 // WGL Stuff
 typedef HANDLE HGLRC;
-typedef HANDLE HPBUFFERARB;
 HGLRC wglCreateContext(HDC);
 BOOL wglMakeCurrent(HDC,HGLRC);
 void* wglGetProcAddress(LPCSTR);
 BOOL wglDeleteContext(HGLRC);
-
-// WGL_ARB_pbuffer.
-typedef HPBUFFERARB (* PFNWGLCREATEPBUFFERARBPROC) (HDC hDC, int iPixelFormat, int iWidth, int iHeight, const int *piAttribList);
-typedef HDC (* PFNWGLGETPBUFFERDCARBPROC) (HPBUFFERARB hPbuffer);
-typedef int (* PFNWGLRELEASEPBUFFERDCARBPROC) (HPBUFFERARB hPbuffer, HDC hDC);
-typedef BOOL (* PFNWGLDESTROYPBUFFERARBPROC) (HPBUFFERARB hPbuffer);
-typedef BOOL (* PFNWGLQUERYPBUFFERARBPROC) (HPBUFFERARB hPbuffer, int iAttribute, int *piValue);
-
-// WGL_ARB_pixel_format.
-typedef BOOL (* PFNWGLGETPIXELFORMATATTRIBIVARBPROC) (HDC hdc, int iPixelFormat, int iLayerPlane, UINT nAttributes, const int *piAttributes, int *piValues);
-typedef BOOL (* PFNWGLGETPIXELFORMATATTRIBFVARBPROC) (HDC hdc, int iPixelFormat, int iLayerPlane, UINT nAttributes, const int *piAttributes, FLOAT *pfValues);
-typedef BOOL (* PFNWGLCHOOSEPIXELFORMATARBPROC) (HDC hdc, const int *piAttribIList, const FLOAT *pfAttribFList, UINT nMaxFormats, int *piFormats, UINT *nNumFormats);
-
-static const int WGL_DRAW_TO_PBUFFER_ARB        = 0x202D;
-static const int WGL_MAX_PBUFFER_PIXELS_ARB     = 0x202E;
-static const int WGL_MAX_PBUFFER_WIDTH_ARB      = 0x202F;
-static const int WGL_MAX_PBUFFER_HEIGHT_ARB     = 0x2030;
-static const int WGL_PBUFFER_LARGEST_ARB        = 0x2033;
-static const int WGL_PBUFFER_WIDTH_ARB          = 0x2034;
-static const int WGL_PBUFFER_HEIGHT_ARB         = 0x2035;
-static const int WGL_PBUFFER_LOST_ARB           = 0x2036;
-static const int WGL_SUPPORT_OPENGL_ARB         = 0x2010;
-static const int WGL_DOUBLE_BUFFER_ARB          = 0x2011;
-static const int WGL_RED_BITS_ARB               = 0x2015;
-static const int WGL_GREEN_BITS_ARB             = 0x2017;
-static const int WGL_BLUE_BITS_ARB              = 0x2019;
-static const int WGL_ALPHA_BITS_ARB             = 0x201B;
-static const int WGL_DEPTH_BITS_ARB             = 0x2022;
-static const int WGL_STENCIL_BITS_ARB           = 0x2023;
 ]]
 	
 	gl = ffi.load("opengl32")
@@ -3277,48 +3247,16 @@ function LuJGL.initialize(name, w, h)
 		dwFlags = bit.bor(gdiffi.PFD_DRAW_TO_WINDOW, gdiffi.PFD_SUPPORT_OPENGL),
 		iPixelType = gdiffi.PFD_TYPE_RGBA,
 		cColorBits = 24,
+		cAlphaBits = 8,
 		cDepthBits = 16,
 		iLayerType = gdiffi.PFD_MAIN_PLANE,
 	})
 	zassert(C.SetPixelFormat(hdc, C.ChoosePixelFormat(hdc, pixelFormat), pixelFormat))
 	
-	-- Create dummy context to get pbuffer functions
+	-- Create render context
 	local hrc = nassert(gl.wglCreateContext(hdc), "Couldn't create opengl context")
 	zassert(gl.wglMakeCurrent(hdc, hrc), "Couldn't wglMakeCurrent")
-	antigc.dummyrc = hrc
-	
-	-- Create PBuffer and new render context
-	local attriblist = ffi.new("int[?]", 19,
-		gl.WGL_DRAW_TO_PBUFFER_ARB, true,
-		gl.WGL_SUPPORT_OPENGL_ARB, true,
-		gl.WGL_DOUBLE_BUFFER_ARB, true,
-		gl.WGL_RED_BITS_ARB, 8,
-		gl.WGL_GREEN_BITS_ARB, 8,
-		gl.WGL_BLUE_BITS_ARB, 8,
-		gl.WGL_ALPHA_BITS_ARB, 8,
-		gl.WGL_DEPTH_BITS_ARB, 16,
-		gl.WGL_STENCIL_BITS_ARB, 8,
-		0)
-	local format, matchingFormats = ffi.new("int[1]"), ffi.new("unsigned int[1]")
-	
-	zassert(glext.wglChoosePixelFormatARB(hdc, attriblist, nil, 1, format, matchingFormats))
-	local pbuffer = nassert(glext.wglCreatePbufferARB(hdc, format[0], w, h, nil))
-	local pbufferdc = nassert(glext.wglGetPbufferDCARB(pbuffer))
-	local pbufferrc = nassert(gl.wglCreateContext(pbufferdc))
-	antigc.pbuffer = pbuffer
-	antigc.pbufferdc = pbufferdc
-	antigc.pbufferrc = pbufferrc
-	
-	-- Get some functions now
-	local notused
-	notused = glext.wglReleasePbufferDCARB
-	notused = glext.wglDestroyPbufferARB
-	
-	gl.wglMakeCurrent(hdc, nil)
-	C.ReleaseDC(window, hdc)
-	hdc = nil
-	antigc.dummyhdc = nil
-	gl.wglMakeCurrent(pbufferdc, pbufferrc)
+	antigc.hrc = hrc
 	
 	-- -----------------------------------------------------------------------------
 	-- Initialize buffer image
@@ -3477,18 +3415,11 @@ function LuJGL.deinitialize()
 		glext.glDeleteObjectARB(antigc.shaderid)
 	end
 	
-	if antigc.pbuffer then
-		gl.wglDeleteContext(antigc.pbufferrc)
-		glext.wglReleasePbufferDCARB(antigc.pbuffer, antigc.pbufferdc)
-		glext.wglDestroyPbufferARB(antigc.pbuffer)
-		antigc.pbuffer, antigc.pbufferrc, antigc.pbufferdc = nil, nil, nil
-	end
-	
 	if antigc.hdc then
-		if antigc.dummyrc then
+		if antigc.hrc then
 			gl.wglMakeCurrent(antigc.hdc,nil)
-			gl.wglDeleteContext(antigc.dummyrc)
-			antigc.dummyrc = nil
+			gl.wglDeleteContext(antigc.hrc)
+			antigc.hrc = nil
 		end
 		
 		C.ReleaseDC(antigc.window, antigc.hdc)
@@ -3537,7 +3468,6 @@ function LuJGL.mainLoop()
 	local window = nassert(antigc.window)
 	local imghdc = nassert(antigc.imagehdc)
 	local imgpixels = antigc.pixels
-	local pitch = antigc.pitch
 	local w, h = LuJGL.width, LuJGL.height
 	local msg = ffi.new("MSG")
 	local pointdest, pointsrc = ffi.new("POINT"), ffi.new("POINT",0,0)
@@ -3589,7 +3519,6 @@ function LuJGL.mainLoop()
 			gl.glPopAttrib()
 			LuJGL.end2D()
 			LuJGL.checkError()
-			--C.SwapBuffers(antigc.pbufferdc)
 			
 			-- Copy drawn contents to the 'back' pixel buffer and read the 'front' one
 			glext.glBindBufferARB(glconst.GL_PIXEL_PACK_BUFFER_ARB, pixelbuffers[pixelbufferFlip and 1 or 0])
@@ -3598,6 +3527,7 @@ function LuJGL.mainLoop()
 			glext.glGetBufferSubData(glconst.GL_PIXEL_PACK_BUFFER_ARB, 0, w*h*4, imgpixels)
 			glext.glBindBufferARB(glconst.GL_PIXEL_PACK_BUFFER_ARB, 0)
 			pixelbufferFlip = not pixelbufferFlip
+			C.SwapBuffers(antigc.hdc)
 			
 			-- RedrawLayeredWindow
 			local hdc = C.GetDC(window)
