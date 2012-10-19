@@ -3193,6 +3193,14 @@ function LuJGL.initialize(name, w, h)
 	local hinstance = nassert(C.GetModuleHandleA(nil),"Failed to get hinstance")
 	antigc.hinstance = hinstance
 	
+	local short_buffer = ffi.new("short[1]") -- for converting unsigned shorts -> signed
+	local function lparam2xy(lparam)
+		short_buffer[0] = bit.band(lparam, 0xFFFF)
+		local x = short_buffer[0]
+		short_buffer[0] = bit.band(bit.rshift(lparam, 16), 0xFFFF)
+		local y = short_buffer[0]
+		return x, y
+	end
 	local windowproc = function(hwnd, msg, wparam, lparam)
 		if msg == userffi.WM_CREATE then
 			--C.timerBeginPeriod(1)
@@ -3207,6 +3215,27 @@ function LuJGL.initialize(name, w, h)
 			LuJGL._curfps = LuJGL.frameCount
 			print("FPS:",LuJGL.frameCount)
 			LuJGL.frameCount = 0
+		elseif msg == userffi.WM_LBUTTONDOWN then
+			call_callback(event_cb, "mouse", 0, true, lparam2xy(lparam))
+			return 0
+		elseif msg == userffi.WM_LBUTTONUP then
+			call_callback(event_cb, "mouse", 0, false, lparam2xy(lparam))
+			return 0
+		elseif msg == userffi.WM_MBUTTONDOWN then
+			call_callback(event_cb, "mouse", 2, true, lparam2xy(lparam))
+			return 0
+		elseif msg == userffi.WM_MBUTTONUP then
+			call_callback(event_cb, "mouse", 2, false, lparam2xy(lparam))
+			return 0
+		elseif msg == userffi.WM_RBUTTONDOWN then
+			call_callback(event_cb, "mouse", 1, true, lparam2xy(lparam))
+			return 0
+		elseif msg == userffi.WM_RBUTTONUP then
+			call_callback(event_cb, "mouse", 1, false, lparam2xy(lparam))
+			return 0
+		elseif msg == userffi.WM_MOUSEMOVE then
+			call_callback(event_cb, "motion", lparam2xy(lparam))
+			return 0
 		end
 		
 		return C.DefWindowProcA(hwnd, msg, wparam, lparam)
