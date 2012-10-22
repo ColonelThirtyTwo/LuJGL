@@ -25,6 +25,8 @@ local event_cb
 
 local tex_channels2glconst
 local ext_function_cache = {}
+local havePerfCounter = false
+local perfCounterFreq, perfLongInt
 
 do
 	-- OpenGL + Extensions
@@ -3103,6 +3105,8 @@ BOOL DeleteDC(HDC);
 UINT_PTR SetTimer(HWND, UINT_PTR, UINT, void*);
 BOOL KillTimer(HWND, UINT_PTR);
 
+ULONGLONG GetTickCount64();
+
 // WGL Stuff
 typedef HANDLE HGLRC;
 HGLRC wglCreateContext(HDC);
@@ -3132,6 +3136,17 @@ BOOL wglDeleteContext(HGLRC);
 		end,
 	})
 	glext = LuJGL.glext
+
+	local longbuf = ffi.new("int64_t[1]")
+	C.QueryPerformanceFrequency(longbuf)
+	if tonumber(longbuf[0]) == 0 then
+		havePerfCounter = false
+		perfLongInt = ffi.new("ULONGLONG[1]")
+	else
+		havePerfCounter = true
+		perfCounterFreq = tonumber(longbuf[0])
+		perfLongInt = longbuf
+	end
 end
 
 local profilebegin, profileend
@@ -3577,9 +3592,18 @@ function LuJGL.signalQuit()
 	stop = true
 end
 
--- Gets the time since the main loop started in seconds
--- TODO: Replace with better system
-LuJGL.getTime = os.clock
+if havePerfCounter then
+	--- Gets the time since the main loop started in seconds
+	function LuJGL.getTime()
+		C.QueryPerformanceCounter(perfLongInt)
+		return tonumber(perfLongInt[0])/perfCounterFreq
+	end
+else
+	function LuJGL.getTime()
+		C.GetTickCount64(perfLongInt)
+		return tonumber(perfLongInt[0])*1000
+	end
+end
 
 -- -- Some helful utilities
 
