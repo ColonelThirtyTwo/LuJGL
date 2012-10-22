@@ -3194,9 +3194,11 @@ end
 -- @param name The window name
 -- @param w (Optional) Window width. Defaults to the size of the primary display.
 -- @param h (Optional) Window height. Defaults to the size of the primary display.
-function LuJGL.initialize(name, w, h)
+-- @param top (Optional) Window 'Always on Top' setting. Defaults to true
+function LuJGL.initialize(name, w, h, top)
 	w = w or C.GetSystemMetrics(userffi.CXSCREEN)
 	h = h or C.GetSystemMetrics(userffi.CYSCREEN)
+	if top == nil then top = true end
 	
 	assert(w % 4 == 0 and h % 4 == 0, "Dimensions must be multiples of 4")
 	LuJGL.width = w
@@ -3274,7 +3276,7 @@ function LuJGL.initialize(name, w, h)
 	local windowclassid = ffi.cast("const char*",zassert(C.RegisterClassExA(windowClass),"Couldn't register window class"))
 	antigc.windowClassID = windowclassid
 	
-	local window = C.CreateWindowExA(bit.bor(C.WS_EX_LAYERED--[[, C.WS_EX_TOPMOST]]),
+	local window = C.CreateWindowExA(bit.bor(C.WS_EX_LAYERED, top and C.WS_EX_TOPMOST or 0),
 		windowclassid, name, userffi.WS_POPUP, 0, 0, w, h, nil, nil, hinstance, nil)
 	if window == nil then error("Couldn't create window: "..C.GetLastError()) end
 	antigc.window = window
