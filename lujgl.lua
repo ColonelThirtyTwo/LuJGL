@@ -18,7 +18,6 @@ local idle_cb
 local event_cb
 
 local tex_channels2glconst
-local ext_function_cache = {}
 
 do
 	-- OpenGL + Extensions
@@ -3539,12 +3538,7 @@ end
 -- @param func The function name, including the prefix (ex. glLinkProgramARB)
 -- @return The pointer to the functon, appropriately casted, or nil if no function definition was found.
 function LuJGL.getProcAddress(func)
-	if ext_function_cache[func] then return ext_function_cache[func] end
-	local ptr = glfw.glfwGetProcAddress(func)
-	local ok, cptr = pcall(ffi.cast, string.format("PFN%sPROC", string.upper(func)), ptr)
-	if not ok then return nil end
-	ext_function_cache[func] = cptr
-	return cptr
+	return LuJGL.glext[func]
 end
 
 -- ------------------------------------------------------------------------------------------ --
