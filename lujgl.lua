@@ -3093,10 +3093,14 @@ typedef struct {
     BYTE SourceConstantAlpha;
     BYTE AlphaFormat; 
 } BLENDFUNCTION;
-const static int WS_EX_TOOLWINDOW = 128;
-const static int WS_EX_LAYERED = 0x80000;
-const static int WS_EX_TOPMOST = 8;
-const static int ULW_ALPHA = 0x02;
+static const int WS_EX_TOOLWINDOW = 128;
+static const int WS_EX_LAYERED = 0x80000;
+static const int WS_EX_TOPMOST = 8;
+static const int ULW_ALPHA = 0x02;
+static const int MAPVK_VK_TO_VSC = 0;
+static const int MAPVK_VSC_TO_VK = 1;
+static const int MAPVK_VK_TO_CHAR = 2;
+static const int MAPVK_VSC_TO_VK_EX = 3;
 int ReleaseDC(HWND, HDC);
 BOOL ClientToScreen(HWND,POINT*);
 BOOL UpdateLayeredWindow(HWND,HDC,POINT*,SIZE*,HDC,POINT*,COLORREF,BLENDFUNCTION*,DWORD);
@@ -3104,8 +3108,8 @@ BOOL DeleteObject(HGDIOBJ);
 BOOL DeleteDC(HDC);
 UINT_PTR SetTimer(HWND, UINT_PTR, UINT, void*);
 BOOL KillTimer(HWND, UINT_PTR);
-
 ULONGLONG GetTickCount64();
+UINT MapVirtualKeyA(UINT uCode, UINT uMapType);
 
 // WGL Stuff
 typedef HANDLE HGLRC;
@@ -3113,12 +3117,227 @@ HGLRC wglCreateContext(HDC);
 BOOL wglMakeCurrent(HDC,HGLRC);
 void* wglGetProcAddress(LPCSTR);
 BOOL wglDeleteContext(HGLRC);
+
+// GLFW key codes (for compatibility)
+static const int GLFW_KEY_UNKNOWN      = -1;
+static const int GLFW_KEY_SPACE        = 32;
+static const int GLFW_KEY_SPECIAL      = 256;
+static const int GLFW_KEY_ESC          = (GLFW_KEY_SPECIAL+1);
+static const int GLFW_KEY_F1           = (GLFW_KEY_SPECIAL+2);
+static const int GLFW_KEY_F2           = (GLFW_KEY_SPECIAL+3);
+static const int GLFW_KEY_F3           = (GLFW_KEY_SPECIAL+4);
+static const int GLFW_KEY_F4           = (GLFW_KEY_SPECIAL+5);
+static const int GLFW_KEY_F5           = (GLFW_KEY_SPECIAL+6);
+static const int GLFW_KEY_F6           = (GLFW_KEY_SPECIAL+7);
+static const int GLFW_KEY_F7           = (GLFW_KEY_SPECIAL+8);
+static const int GLFW_KEY_F8           = (GLFW_KEY_SPECIAL+9);
+static const int GLFW_KEY_F9           = (GLFW_KEY_SPECIAL+10);
+static const int GLFW_KEY_F10          = (GLFW_KEY_SPECIAL+11);
+static const int GLFW_KEY_F11          = (GLFW_KEY_SPECIAL+12);
+static const int GLFW_KEY_F12          = (GLFW_KEY_SPECIAL+13);
+static const int GLFW_KEY_F13          = (GLFW_KEY_SPECIAL+14);
+static const int GLFW_KEY_F14          = (GLFW_KEY_SPECIAL+15);
+static const int GLFW_KEY_F15          = (GLFW_KEY_SPECIAL+16);
+static const int GLFW_KEY_F16          = (GLFW_KEY_SPECIAL+17);
+static const int GLFW_KEY_F17          = (GLFW_KEY_SPECIAL+18);
+static const int GLFW_KEY_F18          = (GLFW_KEY_SPECIAL+19);
+static const int GLFW_KEY_F19          = (GLFW_KEY_SPECIAL+20);
+static const int GLFW_KEY_F20          = (GLFW_KEY_SPECIAL+21);
+static const int GLFW_KEY_F21          = (GLFW_KEY_SPECIAL+22);
+static const int GLFW_KEY_F22          = (GLFW_KEY_SPECIAL+23);
+static const int GLFW_KEY_F23          = (GLFW_KEY_SPECIAL+24);
+static const int GLFW_KEY_F24          = (GLFW_KEY_SPECIAL+25);
+static const int GLFW_KEY_F25          = (GLFW_KEY_SPECIAL+26);
+static const int GLFW_KEY_UP           = (GLFW_KEY_SPECIAL+27);
+static const int GLFW_KEY_DOWN         = (GLFW_KEY_SPECIAL+28);
+static const int GLFW_KEY_LEFT         = (GLFW_KEY_SPECIAL+29);
+static const int GLFW_KEY_RIGHT        = (GLFW_KEY_SPECIAL+30);
+static const int GLFW_KEY_LSHIFT       = (GLFW_KEY_SPECIAL+31);
+static const int GLFW_KEY_RSHIFT       = (GLFW_KEY_SPECIAL+32);
+static const int GLFW_KEY_LCTRL        = (GLFW_KEY_SPECIAL+33);
+static const int GLFW_KEY_RCTRL        = (GLFW_KEY_SPECIAL+34);
+static const int GLFW_KEY_LALT         = (GLFW_KEY_SPECIAL+35);
+static const int GLFW_KEY_RALT         = (GLFW_KEY_SPECIAL+36);
+static const int GLFW_KEY_TAB          = (GLFW_KEY_SPECIAL+37);
+static const int GLFW_KEY_ENTER        = (GLFW_KEY_SPECIAL+38);
+static const int GLFW_KEY_BACKSPACE    = (GLFW_KEY_SPECIAL+39);
+static const int GLFW_KEY_INSERT       = (GLFW_KEY_SPECIAL+40);
+static const int GLFW_KEY_DEL          = (GLFW_KEY_SPECIAL+41);
+static const int GLFW_KEY_PAGEUP       = (GLFW_KEY_SPECIAL+42);
+static const int GLFW_KEY_PAGEDOWN     = (GLFW_KEY_SPECIAL+43);
+static const int GLFW_KEY_HOME         = (GLFW_KEY_SPECIAL+44);
+static const int GLFW_KEY_END          = (GLFW_KEY_SPECIAL+45);
+static const int GLFW_KEY_KP_0         = (GLFW_KEY_SPECIAL+46);
+static const int GLFW_KEY_KP_1         = (GLFW_KEY_SPECIAL+47);
+static const int GLFW_KEY_KP_2         = (GLFW_KEY_SPECIAL+48);
+static const int GLFW_KEY_KP_3         = (GLFW_KEY_SPECIAL+49);
+static const int GLFW_KEY_KP_4         = (GLFW_KEY_SPECIAL+50);
+static const int GLFW_KEY_KP_5         = (GLFW_KEY_SPECIAL+51);
+static const int GLFW_KEY_KP_6         = (GLFW_KEY_SPECIAL+52);
+static const int GLFW_KEY_KP_7         = (GLFW_KEY_SPECIAL+53);
+static const int GLFW_KEY_KP_8         = (GLFW_KEY_SPECIAL+54);
+static const int GLFW_KEY_KP_9         = (GLFW_KEY_SPECIAL+55);
+static const int GLFW_KEY_KP_DIVIDE    = (GLFW_KEY_SPECIAL+56);
+static const int GLFW_KEY_KP_MULTIPLY  = (GLFW_KEY_SPECIAL+57);
+static const int GLFW_KEY_KP_SUBTRACT  = (GLFW_KEY_SPECIAL+58);
+static const int GLFW_KEY_KP_ADD       = (GLFW_KEY_SPECIAL+59);
+static const int GLFW_KEY_KP_DECIMAL   = (GLFW_KEY_SPECIAL+60);
+static const int GLFW_KEY_KP_EQUAL     = (GLFW_KEY_SPECIAL+61);
+static const int GLFW_KEY_KP_ENTER     = (GLFW_KEY_SPECIAL+62);
+static const int GLFW_KEY_KP_NUM_LOCK  = (GLFW_KEY_SPECIAL+63);
+static const int GLFW_KEY_CAPS_LOCK    = (GLFW_KEY_SPECIAL+64);
+static const int GLFW_KEY_SCROLL_LOCK  = (GLFW_KEY_SPECIAL+65);
+static const int GLFW_KEY_PAUSE        = (GLFW_KEY_SPECIAL+66);
+static const int GLFW_KEY_LSUPER       = (GLFW_KEY_SPECIAL+67);
+static const int GLFW_KEY_RSUPER       = (GLFW_KEY_SPECIAL+68);
+static const int GLFW_KEY_MENU         = (GLFW_KEY_SPECIAL+69);
+static const int GLFW_KEY_LAST         = GLFW_KEY_MENU;
+
+static const int VK_LBUTTON = 1;
+static const int VK_RBUTTON = 2;
+static const int VK_CANCEL = 3;
+static const int VK_MBUTTON = 4;
+static const int VK_XBUTTON1 = 5;
+static const int VK_XBUTTON2 = 6;
+static const int VK_BACK = 8;
+static const int VK_TAB = 9;
+static const int VK_CLEAR = 12;
+static const int VK_RETURN = 13;
+static const int VK_SHIFT = 16;
+static const int VK_CONTROL = 17;
+static const int VK_MENU = 18;
+static const int VK_PAUSE = 19;
+static const int VK_CAPITAL = 20;
+static const int VK_KANA = 0x15;
+static const int VK_HANGEUL = 0x15;
+static const int VK_HANGUL = 0x15;
+static const int VK_JUNJA = 0x17;
+static const int VK_FINAL = 0x18;
+static const int VK_HANJA = 0x19;
+static const int VK_KANJI = 0x19;
+static const int VK_ESCAPE = 0x1B;
+static const int VK_CONVERT = 0x1C;
+static const int VK_NONCONVERT = 0x1D;
+static const int VK_ACCEPT = 0x1E;
+static const int VK_MODECHANGE = 0x1F;
+static const int VK_SPACE = 32;
+static const int VK_PRIOR = 33;
+static const int VK_NEXT = 34;
+static const int VK_END = 35;
+static const int VK_HOME = 36;
+static const int VK_LEFT = 37;
+static const int VK_UP = 38;
+static const int VK_RIGHT = 39;
+static const int VK_DOWN = 40;
+static const int VK_SELECT = 41;
+static const int VK_PRINT = 42;
+static const int VK_EXECUTE = 43;
+static const int VK_SNAPSHOT = 44;
+static const int VK_INSERT = 45;
+static const int VK_DELETE = 46;
+static const int VK_HELP = 47;
+static const int VK_LWIN = 0x5B;
+static const int VK_RWIN = 0x5C;
+static const int VK_APPS = 0x5D;
+static const int VK_SLEEP = 0x5F;
+static const int VK_NUMPAD0 = 0x60;
+static const int VK_NUMPAD1 = 0x61;
+static const int VK_NUMPAD2 = 0x62;
+static const int VK_NUMPAD3 = 0x63;
+static const int VK_NUMPAD4 = 0x64;
+static const int VK_NUMPAD5 = 0x65;
+static const int VK_NUMPAD6 = 0x66;
+static const int VK_NUMPAD7 = 0x67;
+static const int VK_NUMPAD8 = 0x68;
+static const int VK_NUMPAD9 = 0x69;
+static const int VK_MULTIPLY = 0x6A;
+static const int VK_ADD = 0x6B;
+static const int VK_SEPARATOR = 0x6C;
+static const int VK_SUBTRACT = 0x6D;
+static const int VK_DECIMAL = 0x6E;
+static const int VK_DIVIDE = 0x6F;
+static const int VK_F1 = 0x70;
+static const int VK_F2 = 0x71;
+static const int VK_F3 = 0x72;
+static const int VK_F4 = 0x73;
+static const int VK_F5 = 0x74;
+static const int VK_F6 = 0x75;
+static const int VK_F7 = 0x76;
+static const int VK_F8 = 0x77;
+static const int VK_F9 = 0x78;
+static const int VK_F10 = 0x79;
+static const int VK_F11 = 0x7A;
+static const int VK_F12 = 0x7B;
+static const int VK_F13 = 0x7C;
+static const int VK_F14 = 0x7D;
+static const int VK_F15 = 0x7E;
+static const int VK_F16 = 0x7F;
+static const int VK_F17 = 0x80;
+static const int VK_F18 = 0x81;
+static const int VK_F19 = 0x82;
+static const int VK_F20 = 0x83;
+static const int VK_F21 = 0x84;
+static const int VK_F22 = 0x85;
+static const int VK_F23 = 0x86;
+static const int VK_F24 = 0x87;
+static const int VK_NUMLOCK = 0x90;
+static const int VK_SCROLL = 0x91;
+static const int VK_LSHIFT = 0xA0;
+static const int VK_RSHIFT = 0xA1;
+static const int VK_LCONTROL = 0xA2;
+static const int VK_RCONTROL = 0xA3;
+static const int VK_LMENU = 0xA4;
+static const int VK_RMENU = 0xA5;
+static const int VK_BROWSER_BACK = 0xA6;
+static const int VK_BROWSER_FORWARD = 0xA7;
+static const int VK_BROWSER_REFRESH = 0xA8;
+static const int VK_BROWSER_STOP = 0xA9;
+static const int VK_BROWSER_SEARCH = 0xAA;
+static const int VK_BROWSER_FAVORITES = 0xAB;
+static const int VK_BROWSER_HOME = 0xAC;
+static const int VK_VOLUME_MUTE = 0xAD;
+static const int VK_VOLUME_DOWN = 0xAE;
+static const int VK_VOLUME_UP = 0xAF;
+static const int VK_MEDIA_NEXT_TRACK = 0xB0;
+static const int VK_MEDIA_PREV_TRACK = 0xB1;
+static const int VK_MEDIA_STOP = 0xB2;
+static const int VK_MEDIA_PLAY_PAUSE = 0xB3;
+static const int VK_LAUNCH_MAIL = 0xB4;
+static const int VK_LAUNCH_MEDIA_SELECT = 0xB5;
+static const int VK_LAUNCH_APP1 = 0xB6;
+static const int VK_LAUNCH_APP2 = 0xB7;
+static const int VK_OEM_1 = 0xBA;
+static const int VK_OEM_PLUS = 0xBB;
+static const int VK_OEM_COMMA = 0xBC;
+static const int VK_OEM_MINUS = 0xBD;
+static const int VK_OEM_PERIOD = 0xBE;
+static const int VK_OEM_2 = 0xBF;
+static const int VK_OEM_3 = 0xC0;
+static const int VK_OEM_4 = 0xDB;
+static const int VK_OEM_5 = 0xDC;
+static const int VK_OEM_6 = 0xDD;
+static const int VK_OEM_7 = 0xDE;
+static const int VK_OEM_8 = 0xDF;
+static const int VK_OEM_102 = 0xE2;
+static const int VK_PROCESSKEY = 0xE5;
+static const int VK_PACKET = 0xE7;
+static const int VK_ATTN = 0xF6;
+static const int VK_CRSEL = 0xF7;
+static const int VK_EXSEL = 0xF8;
+static const int VK_EREOF = 0xF9;
+static const int VK_PLAY = 0xFA;
+static const int VK_ZOOM = 0xFB;
+static const int VK_NONAME = 0xFC;
+static const int VK_PA1 = 0xFD;
+static const int VK_OEM_CLEAR = 0xFE;
+
 ]]
 	
 	gl = ffi.load("opengl32")
 	glu = ffi.load("glu32")
 	LuJGL.gl = gl
 	LuJGL.glu = glu
+	LuJGL.glfw = ffi.C -- For keycodes
 	
 	local ok, stb_image = pcall(ffi.load, "stb_image")
 	if ok then
@@ -3190,6 +3409,120 @@ local function call_callback(func,...)
 	return ok, msg
 end
 
+local translateKey
+do
+	local vk2keypad = {
+		[ffi.C.VK_INSERT  ] = ffi.C.GLFW_KEY_KP_0,
+		[ffi.C.VK_END     ] = ffi.C.GLFW_KEY_KP_1,
+		[ffi.C.VK_DOWN    ] = ffi.C.GLFW_KEY_KP_2,
+		[ffi.C.VK_NEXT    ] = ffi.C.GLFW_KEY_KP_3,
+		[ffi.C.VK_LEFT    ] = ffi.C.GLFW_KEY_KP_4,
+		[ffi.C.VK_CLEAR   ] = ffi.C.GLFW_KEY_KP_5,
+		[ffi.C.VK_RIGHT   ] = ffi.C.GLFW_KEY_KP_6,
+		[ffi.C.VK_HOME    ] = ffi.C.GLFW_KEY_KP_7,
+		[ffi.C.VK_UP      ] = ffi.C.GLFW_KEY_KP_8,
+		[ffi.C.VK_PRIOR   ] = ffi.C.GLFW_KEY_KP_9,
+		[ffi.C.VK_DIVIDE  ] = ffi.C.GLFW_KEY_KP_DIVIDE,
+		[ffi.C.VK_MULTIPLY] = ffi.C.GLFW_KEY_KP_MULTIPLY,
+		[ffi.C.VK_SUBTRACT] = ffi.C.GLFW_KEY_KP_SUBTRACT,
+		[ffi.C.VK_ADD     ] = ffi.C.GLFW_KEY_KP_ADD,
+		[ffi.C.VK_DELETE  ] = ffi.C.GLFW_KEY_KP_DECIMAL,
+	}
+	local specialkeys = {
+		[ffi.C.VK_ESCAPE]        = ffi.C.GLFW_KEY_ESC,
+		[ffi.C.VK_TAB]           = ffi.C.GLFW_KEY_TAB,
+		[ffi.C.VK_BACK]          = ffi.C.GLFW_KEY_BACKSPACE,
+		[ffi.C.VK_HOME]          = ffi.C.GLFW_KEY_HOME,
+		[ffi.C.VK_END]           = ffi.C.GLFW_KEY_END,
+		[ffi.C.VK_PRIOR]         = ffi.C.GLFW_KEY_PAGEUP,
+		[ffi.C.VK_NEXT]          = ffi.C.GLFW_KEY_PAGEDOWN,
+		[ffi.C.VK_INSERT]        = ffi.C.GLFW_KEY_INSERT,
+		[ffi.C.VK_DELETE]        = ffi.C.GLFW_KEY_DEL,
+		[ffi.C.VK_LEFT]          = ffi.C.GLFW_KEY_LEFT,
+		[ffi.C.VK_UP]            = ffi.C.GLFW_KEY_UP,
+		[ffi.C.VK_RIGHT]         = ffi.C.GLFW_KEY_RIGHT,
+		[ffi.C.VK_DOWN]          = ffi.C.GLFW_KEY_DOWN,
+		[ffi.C.VK_F1]            = ffi.C.GLFW_KEY_F1,
+		[ffi.C.VK_F2]            = ffi.C.GLFW_KEY_F2,
+		[ffi.C.VK_F3]            = ffi.C.GLFW_KEY_F3,
+		[ffi.C.VK_F4]            = ffi.C.GLFW_KEY_F4,
+		[ffi.C.VK_F5]            = ffi.C.GLFW_KEY_F5,
+		[ffi.C.VK_F6]            = ffi.C.GLFW_KEY_F6,
+		[ffi.C.VK_F7]            = ffi.C.GLFW_KEY_F7,
+		[ffi.C.VK_F8]            = ffi.C.GLFW_KEY_F8,
+		[ffi.C.VK_F9]            = ffi.C.GLFW_KEY_F9,
+		[ffi.C.VK_F10]           = ffi.C.GLFW_KEY_F10,
+		[ffi.C.VK_F11]           = ffi.C.GLFW_KEY_F11,
+		[ffi.C.VK_F12]           = ffi.C.GLFW_KEY_F12,
+		[ffi.C.VK_F13]           = ffi.C.GLFW_KEY_F13,
+		[ffi.C.VK_F14]           = ffi.C.GLFW_KEY_F14,
+		[ffi.C.VK_F15]           = ffi.C.GLFW_KEY_F15,
+		[ffi.C.VK_F16]           = ffi.C.GLFW_KEY_F16,
+		[ffi.C.VK_F17]           = ffi.C.GLFW_KEY_F17,
+		[ffi.C.VK_F18]           = ffi.C.GLFW_KEY_F18,
+		[ffi.C.VK_F19]           = ffi.C.GLFW_KEY_F19,
+		[ffi.C.VK_F20]           = ffi.C.GLFW_KEY_F20,
+		[ffi.C.VK_F21]           = ffi.C.GLFW_KEY_F21,
+		[ffi.C.VK_F22]           = ffi.C.GLFW_KEY_F22,
+		[ffi.C.VK_F23]           = ffi.C.GLFW_KEY_F23,
+		[ffi.C.VK_F24]           = ffi.C.GLFW_KEY_F24,
+		[ffi.C.VK_SPACE]         = ffi.C.GLFW_KEY_SPACE,
+		[ffi.C.VK_NUMPAD0]       = ffi.C.GLFW_KEY_KP_0,
+		[ffi.C.VK_NUMPAD1]       = ffi.C.GLFW_KEY_KP_1,
+		[ffi.C.VK_NUMPAD2]       = ffi.C.GLFW_KEY_KP_2,
+		[ffi.C.VK_NUMPAD3]       = ffi.C.GLFW_KEY_KP_3,
+		[ffi.C.VK_NUMPAD4]       = ffi.C.GLFW_KEY_KP_4,
+		[ffi.C.VK_NUMPAD5]       = ffi.C.GLFW_KEY_KP_5,
+		[ffi.C.VK_NUMPAD6]       = ffi.C.GLFW_KEY_KP_6,
+		[ffi.C.VK_NUMPAD7]       = ffi.C.GLFW_KEY_KP_7,
+		[ffi.C.VK_NUMPAD8]       = ffi.C.GLFW_KEY_KP_8,
+		[ffi.C.VK_NUMPAD9]       = ffi.C.GLFW_KEY_KP_9,
+		[ffi.C.VK_DIVIDE]        = ffi.C.GLFW_KEY_KP_DIVIDE,
+		[ffi.C.VK_MULTIPLY]      = ffi.C.GLFW_KEY_KP_MULTIPLY,
+		[ffi.C.VK_SUBTRACT]      = ffi.C.GLFW_KEY_KP_SUBTRACT,
+		[ffi.C.VK_ADD]           = ffi.C.GLFW_KEY_KP_ADD,
+		[ffi.C.VK_DECIMAL]       = ffi.C.GLFW_KEY_KP_DECIMAL,
+		[ffi.C.VK_NUMLOCK]       = ffi.C.GLFW_KEY_KP_NUM_LOCK,
+		[ffi.C.VK_CAPITAL]       = ffi.C.GLFW_KEY_CAPS_LOCK,
+		[ffi.C.VK_SCROLL]        = ffi.C.GLFW_KEY_SCROLL_LOCK,
+		[ffi.C.VK_PAUSE]         = ffi.C.GLFW_KEY_PAUSE,
+		[ffi.C.VK_LWIN]          = ffi.C.GLFW_KEY_LSUPER,
+		[ffi.C.VK_RWIN]          = ffi.C.GLFW_KEY_RSUPER,
+		[ffi.C.VK_APPS]          = ffi.C.GLFW_KEY_MENU,
+	}
+	function translateKey(wparam, lparam)
+		-- Taken from GLFW's win32_window.c
+		local hiflags = bit.band(bit.rshift(lparam, 16), 0xFFFF)
+		if bit.band(hiflags, 0x100) == 0 then
+			local v = vk2keypad[ffi.C.MapVirtualKeyA(bit.band(hiflags, 0xFF), ffi.C.MAPVK_VSC_TO_VK)]
+			if v then return v end
+		end
+
+		if wparam == ffi.C.VK_SHIFT then
+			if bit.rshift(bit.band(lparam, 0x01ff0000), 16) == ffi.C.MapVirtualKeyA(ffi.C.VK_RSHIFT, ffi.C.MAPVK_VK_TO_VSC) then
+				return ffi.C.GLFW_KEY_RSHIFT
+			else
+				return ffi.C.GLFW_KEY_LSHIFT
+			end
+		elseif wparam == ffi.C.VK_CONTROL then
+			if bit.band(lparam, 0x01000000) ~= 0 then return ffi.C.GLFW_KEY_RCTRL end
+			-- TODO: GLFW does some complicated check here, ignoring for now
+			return ffi.C.GLFW_KEY_LCTRL
+		elseif wparam == ffi.C.VK_MENU then
+			if bit.band(lparam, 0x01000000) ~= 0 then return ffi.C.GLFW_KEY_RALT end
+			return ffi.C.GLFW_KEY_LALT
+		elseif wparam == ffi.C.VK_RETURN then
+			if bit.band(lparam, 0x01000000) ~= 0 then return ffi.C.GLFW_KEY_KP_ENTER end
+			return ffi.C.GLFW_KEY_ENTER
+		end
+
+		if specialkeys[wparam] then return specialkeys[wparam] end
+
+		wparam = bit.band(ffi.C.MapVirtualKeyA(wparam, ffi.C.MAPVK_VK_TO_CHAR), 0xFFFF)
+		return wparam <= 255 and string.char(wparam):lower() or wparam
+	end
+end
+
 --- Creates a transparent window
 -- @param name The window name
 -- @param w (Optional) Window width. Defaults to the size of the primary display.
@@ -3253,6 +3586,16 @@ function LuJGL.initialize(name, w, h, top)
 		elseif msg == userffi.WM_MOUSEMOVE then
 			call_callback(event_cb, "motion", lparam2xy(lparam))
 			return 0
+		elseif msg == userffi.WM_KEYDOWN or msg == userffi.WM_SYSKEYDOWN then
+			call_callback(event_cb, "key", true, translateKey(wparam, lparam))
+			return 0
+		elseif msg == userffi.WM_KEYUP or msg == userffi.WM_SYSKEYUP then
+			if wparam == ffi.C.VK_SHIFT then
+				call_callback(event_cb, "key", false, ffi.C.GLFW_KEY_LSHIFT)
+				call_callback(event_cb, "key", false, ffi.C.GLFW_KEY_RSHIFT)
+			else
+				call_callback(event_cb, "key", false, translateKey(wparam, lparam))
+			end
 		end
 		
 		return C.DefWindowProcA(hwnd, msg, wparam, lparam)
