@@ -2962,6 +2962,32 @@ do
 	]]
 	
 	-- GLFW
+	if jit.os == "Windows" then
+		-- GLFW callbacks are declared as stdcall on windows
+		ffi.cdef[[
+			typedef void (__stdcall * GLFWwindowsizefun)(int,int);
+			typedef int  (__stdcall * GLFWwindowclosefun)(void);
+			typedef void (__stdcall * GLFWwindowrefreshfun)(void);
+			typedef void (__stdcall * GLFWmousebuttonfun)(int,int);
+			typedef void (__stdcall * GLFWmouseposfun)(int,int);
+			typedef void (__stdcall * GLFWmousewheelfun)(int);
+			typedef void (__stdcall * GLFWkeyfun)(int,int);
+			typedef void (__stdcall * GLFWcharfun)(int,int);
+			typedef void (__stdcall * GLFWthreadfun)(void *);
+		]]
+	else
+		ffi.cdef[[
+			typedef void (*GLFWwindowsizefun)(int,int);
+			typedef int  (*GLFWwindowclosefun)(void);
+			typedef void (*GLFWwindowrefreshfun)(void);
+			typedef void (*GLFWmousebuttonfun)(int,int);
+			typedef void (*GLFWmouseposfun)(int,int);
+			typedef void (*GLFWmousewheelfun)(int);
+			typedef void (*GLFWkeyfun)(int,int);
+			typedef void (*GLFWcharfun)(int,int);
+			typedef void (*GLFWthreadfun)(void *);
+		]]
+	end
 	ffi.cdef[[
 		static const int GLFW_VERSION_MAJOR = 2;
 		static const int GLFW_VERSION_MINOR = 7;
@@ -3127,15 +3153,6 @@ do
 		typedef int GLFWthread;
 		typedef void * GLFWmutex;
 		typedef void * GLFWcond;
-		typedef void ( * GLFWwindowsizefun)(int,int);
-		typedef int ( * GLFWwindowclosefun)(void);
-		typedef void ( * GLFWwindowrefreshfun)(void);
-		typedef void ( * GLFWmousebuttonfun)(int,int);
-		typedef void ( * GLFWmouseposfun)(int,int);
-		typedef void ( * GLFWmousewheelfun)(int);
-		typedef void ( * GLFWkeyfun)(int,int);
-		typedef void ( * GLFWcharfun)(int,int);
-		typedef void ( * GLFWthreadfun)(void *);
 		int glfwInit( void );
 		void glfwTerminate( void );
 		void glfwGetVersion( int *major, int *minor, int *rev );
@@ -3201,7 +3218,7 @@ do
 		int glfwLoadMemoryTexture2D( const void *data, long size, int flags );
 		int glfwLoadTextureImage2D( GLFWimage *img, int flags );
 	]]
-	
+
 	-- STB_Image
 	ffi.cdef[[
 		enum
