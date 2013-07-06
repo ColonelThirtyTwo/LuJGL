@@ -20,7 +20,7 @@ CubeVerticies.f = ffi.new("const float[6][4]", {
 })
 
 print("Initializing window")
-lujgl.initialize("Test App",nil,nil,{[lujgl.glfw.GLFW_WINDOW_NO_RESIZE]=true,[lujgl.glfw.GLFW_FSAA_SAMPLES]=8})
+lujgl.initialize("Test App",nil,nil,{[lujgl.glfwconst.GLFW_RESIZABLE]=true,[lujgl.glfwconst.GLFW_SAMPLES]=8})
 
 local gl = lujgl.gl
 local glconst = lujgl.glconst
