@@ -3414,17 +3414,6 @@ if LuJGL.stb_image then
 	end
 end
 
-local fbuffer = ffi.new("float[?]",4)
---- Convenience function for glLightfv. Uses a static internal buffer
--- to store the array in.
-function LuJGL.glLight(light, enum, r, g, b, a)
-	fbuffer[0] = r or 0
-	fbuffer[1] = g or 0
-	fbuffer[2] = b or 0
-	fbuffer[3] = a or 1
-	gl.glLightfv(light, enum, fbuffer)
-end
-
 --- Begins rendering 2D. Use this to render HUD, GUI, etc.
 function LuJGL.begin2D()
 	gl.glPushAttrib(bit.bor(glconst.GL_ENABLE_BIT))
